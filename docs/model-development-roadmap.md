@@ -43,6 +43,11 @@ from N31 and absent from every other prospective group. Feature and endpoint
 receipts are frozen before experimental labels are connected. The four existing
 model files are then applied once, without re-tuning.
 
+The single primary comparison is
+`combined30_p512_ridge − static20_ridge`. The frozen Random Forest pair is a
+descriptive sensitivity analysis and cannot replace Ridge after labels are
+seen.
+
 The project would regard Combined30 as a candidate for recommendation only if
 the same-family Static20 comparison meets every condition below.
 
@@ -55,9 +60,9 @@ the same-family Static20 comparison meets every condition below.
 
 These are **project decision criteria**, not numbers proven or required by any
 paper. They make a future recommendation falsifiable before the prospective
-labels are seen. The number 15 and the 0.10-pKoff target should be revisited
-when a new panel's assay precision, group structure, and available independent
-coverage are known.
+labels are seen. For a given prospective run, the minimum of 15 groups and the
+0.10-pKoff target are version-frozen before labels are connected; they cannot
+be revised after the result is visible.
 
 For this comparison, group-equal MAE first gives every exact-ligand group one
 average absolute error, regardless of its row count. A paired bootstrap then
@@ -65,6 +70,10 @@ resamples those group-level errors with replacement and recomputes
 `Combined30 MAE − Static20 MAE`. An upper interval bound below zero means that
 the observed dynamic advantage stayed favourable over those resamples. It does
 not prove a universal effect on every future protein or assay.
+
+The executable two-phase freeze/evaluate procedure, required table columns,
+robustness definitions, and `NOT_EVALUABLE` rules are specified in the
+[prospective validation protocol](prospective-validation-protocol.md).
 
 ## If the prospective comparison does not support Dynamic10
 

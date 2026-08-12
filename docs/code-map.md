@@ -54,6 +54,7 @@ baseline.
 | [scripts/koff_ml/run_dual_endpoint_combined30_matrix_v1.py](../scripts/koff_ml/run_dual_endpoint_combined30_matrix_v1.py) | Runs a matched, grouped classical-model comparison across endpoint arms and samplers. | Reproducing an authorised research comparison, not routine prediction. |
 | [scripts/koff_ml/build_experimental_model_registry.py](../scripts/koff_ml/build_experimental_model_registry.py) | Rebuilds only the frozen N31 registry from its separately authorised panel, fold map, reused OOF file, endpoint contract, and bundled provenance receipt. It rejects any input digest or held-out-fold drift. | Auditing the historical N31 release. It is not a generic trainer for a new cohort. |
 | [tools/build_paired_dynamic_increment.py](../tools/build_paired_dynamic_increment.py) | Summarises aggregate Static20-versus-Combined30 out-of-fold differences without publishing per-system labels. | Updating public aggregate evidence after an authorised comparison. |
+| [tools/prospective_dynamic_validation.py](../tools/prospective_dynamic_validation.py) | Freezes an identity-audited new-group cohort and all four bundled predictions before labels, then evaluates the one predeclared Ridge comparison with Random Forest as sensitivity. | Running the private, two-phase prospective protocol after authorised identity and label tables are available. |
 
 The original campaign benchmark runner, the historical five-condition endpoint
 sidecar, and alternative sampler experiments are intentionally not part of this

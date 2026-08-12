@@ -27,6 +27,7 @@ you read a lesson before you can work.
 | “How do I prepare my own three production replicas?” | How-to guide | [Prepare a real LiGaMD input set](docs/prepare-real-inputs.md). It assumes you already know your simulation and leads to one manifest and one `featurize` command. |
 | “What does this field, status, unit, or input path mean?” | Reference | [Input-manifest reference](docs/input-manifest.md), [feature reference](docs/feature-definitions.md), and [model card](MODEL_CARD.md). |
 | “Why does the workflow use this episode boundary, sampler, grouping, or evidence rule?” | Explanation | [Episode and sampler explanation](docs/endpoint-and-sampler.md), [method evidence ledger](docs/method-evidence.md), and [model-development roadmap](docs/model-development-roadmap.md). |
+| “How do I freeze and evaluate a genuinely new ligand-group panel?” | Research protocol | [Prospective Dynamic10 validation protocol](docs/prospective-validation-protocol.md). It keeps identity auditing and predictions separate from later label attachment. |
 
 The [code map](docs/code-map.md) is for readers who want to trace a documented
 operation into the public source code.

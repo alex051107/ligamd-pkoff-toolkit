@@ -14,6 +14,9 @@
 - Bound Combined30 inference to the bundled endpoint-v2, P512, and exact-three
   pooling semantics recorded in the feature receipt; Static20 remains usable
   independently of the trajectory contract.
+- Added a private-data-safe two-phase prospective protocol that freezes a new
+  exact-ligand cohort and all four bundled predictions before labels, then uses
+  Ridge as the sole primary Static20-versus-Combined30 comparison.
 
 ## 0.1.0, 2026-08-12
 
