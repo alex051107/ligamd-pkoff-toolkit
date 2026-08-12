@@ -1,0 +1,106 @@
+{
+  "schema_version": "ligamd_typed_interactions_core8_contract_v1.0",
+  "contract_id": "CORE8_GLOBAL_TYPED_FRACTION_STAGE_v1",
+  "status": "ENGINEERING_CHALLENGER_NOT_SELECTED",
+  "engine": {
+    "name": "ProLIF",
+    "version": "2.2.0",
+    "count": false,
+    "implicit_hydrogens": false,
+    "vicinity_cutoff_A": 8.0,
+    "use_segid": true
+  },
+  "interaction_order": [
+    "Hydrophobic",
+    "HBAcceptor",
+    "HBDonor",
+    "PiStacking",
+    "Anionic",
+    "Cationic",
+    "CationPi",
+    "PiCation"
+  ],
+  "parameters": {
+    "Hydrophobic": {
+      "hydrophobic": "[c,s,Br,I,S&H0&v2,$([C;X2H0R0,X3H1R0,X4H2R0,X3H0,X4H1,X4H0]);+0;!$([#6]~[#7,#8,#9])]",
+      "distance": 4.5
+    },
+    "HBAcceptor": {
+      "acceptor": "[$([N&!$([NX3]-*=[O,N,P,S])&!$([NX3]-[a])&!$([Nv4+1])&!$(N=C(-[C,N])-N)]),$([n+0&!X3&!$([n&r5]:[n+&r5])]),$([O&!$([OX2](C)C=O)&!$(O(~a)~a)&!$(O=N-*)&!$([O-]-N=O)]),$([o+0]),$([F&$(F-[#6])&!$(F-[#6][F,Cl,Br,I])])]",
+      "donor": "[$([O,S,#7;+0]),$([Nv4+1]),$([n+]c[nH])]-[H]",
+      "distance": 3.5,
+      "DHA_angle": [130, 180]
+    },
+    "HBDonor": {
+      "acceptor": "[$([N&!$([NX3]-*=[O,N,P,S])&!$([NX3]-[a])&!$([Nv4+1])&!$(N=C(-[C,N])-N)]),$([n+0&!X3&!$([n&r5]:[n+&r5])]),$([O&!$([OX2](C)C=O)&!$(O(~a)~a)&!$(O=N-*)&!$([O-]-N=O)]),$([o+0]),$([F&$(F-[#6])&!$(F-[#6][F,Cl,Br,I])])]",
+      "donor": "[$([O,S,#7;+0]),$([Nv4+1]),$([n+]c[nH])]-[H]",
+      "distance": 3.5,
+      "DHA_angle": [130, 180]
+    },
+    "PiStacking": {
+      "ftf_kwargs": {
+        "distance": 5.5,
+        "plane_angle": [0, 35],
+        "normal_to_centroid_angle": [0, 33],
+        "pi_ring": [
+          "[a;r6]1:[a;r6]:[a;r6]:[a;r6]:[a;r6]:[a;r6]:1",
+          "[a;r5]1:[a;r5]:[a;r5]:[a;r5]:[a;r5]:1"
+        ]
+      },
+      "etf_kwargs": {
+        "distance": 6.5,
+        "plane_angle": [50, 90],
+        "normal_to_centroid_angle": [0, 30],
+        "pi_ring": [
+          "[a;r6]1:[a;r6]:[a;r6]:[a;r6]:[a;r6]:[a;r6]:1",
+          "[a;r5]1:[a;r5]:[a;r5]:[a;r5]:[a;r5]:1"
+        ],
+        "intersect_radius": 1.5
+      }
+    },
+    "Anionic": {
+      "cation": "[+{1-}!$(*~[*-{1-}]),$([NX3&!$([NX3]-O)]-[C]=[NX3+])]",
+      "anion": "[-{1-}!$(*~[*+{1-}]),$(O=[C,S,P]-[O-])]",
+      "distance": 4.5
+    },
+    "Cationic": {
+      "cation": "[+{1-}!$(*~[*-{1-}]),$([NX3&!$([NX3]-O)]-[C]=[NX3+])]",
+      "anion": "[-{1-}!$(*~[*+{1-}]),$(O=[C,S,P]-[O-])]",
+      "distance": 4.5
+    },
+    "CationPi": {
+      "cation": "[+{1-}!$(*~[*-{1-}]),$([NX3&!$([NX3]-O)]-[C]=[NX3+])]",
+      "pi_ring": [
+        "[a;r6]1:[a;r6]:[a;r6]:[a;r6]:[a;r6]:[a;r6]:1",
+        "[a;r5]1:[a;r5]:[a;r5]:[a;r5]:[a;r5]:1"
+      ],
+      "distance": 4.5,
+      "angle": [0, 30]
+    },
+    "PiCation": {
+      "cation": "[+{1-}!$(*~[*-{1-}]),$([NX3&!$([NX3]-O)]-[C]=[NX3+])]",
+      "pi_ring": [
+        "[a;r6]1:[a;r6]:[a;r6]:[a;r6]:[a;r6]:[a;r6]:1",
+        "[a;r5]1:[a;r5]:[a;r5]:[a;r5]:[a;r5]:1"
+      ],
+      "distance": 4.5,
+      "angle": [0, 30]
+    }
+  },
+  "progress": {
+    "coordinate": "source_index0 / complete_exit_onset_index0",
+    "bins": [[0.0, 0.5], [0.5, 0.8], [0.8, 0.95], [0.95, 1.0]],
+    "aggregation": "nearest-selected-frame Voronoi support"
+  },
+  "output": {
+    "representation": "GLOBAL_TYPED_FRACTION_STAGE",
+    "dimension": 32,
+    "denominator": "number of standard-amino-acid protein residues"
+  },
+  "scientific_boundary": {
+    "experimental_pkoff_read": false,
+    "representation_selected": false,
+    "model_selected": false,
+    "physical_koff_estimated": false
+  }
+}

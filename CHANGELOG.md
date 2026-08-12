@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Added an opt-in `--typed-interactions` engineering route that reuses each
+  existing P512 coordinate union to calculate a separate 32-field CORE8
+  interaction challenger.
+- Kept the challenger out of Current30, bundled model inputs, and the model
+  registry; every output is marked `ENGINEERING_CHALLENGER_NOT_SELECTED`.
+- Added a bundled typed-interaction contract, optional dependency group,
+  focused PBC/shape check, and first-reader decision note.
+- Made raw-input reuse fail closed on duplicate trajectory paths and canonical
+  PDB/topology atom-order drift, while normalizing explicitly blank PDB chains.
+
 ## 0.1.0, 2026-08-12
 
 First public experimental release.

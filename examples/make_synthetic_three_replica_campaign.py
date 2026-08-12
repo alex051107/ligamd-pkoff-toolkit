@@ -37,6 +37,27 @@ def _pdb_line(
     )
 
 
+def _write_minimal_parm7(path: Path) -> None:
+    """Write the four AMBER identity fields needed by the mapping gate."""
+
+    path.write_text(
+        "%VERSION  VERSION_STAMP = V0001.000\n"
+        "%FLAG POINTERS\n"
+        "%FORMAT(10I8)\n"
+        f"{5:8d}\n"
+        "%FLAG ATOM_NAME\n"
+        "%FORMAT(20a4)\n"
+        + "".join(value.ljust(4) for value in ("N", "CA", "C", "C1", "O1"))
+        + "\n%FLAG RESIDUE_LABEL\n"
+        "%FORMAT(20a4)\n"
+        + "".join(value.ljust(4) for value in ("ALA", "LIG"))
+        + "\n%FLAG RESIDUE_POINTER\n"
+        "%FORMAT(10I8)\n"
+        f"{1:8d}{4:8d}\n",
+        encoding="utf-8",
+    )
+
+
 def build(output_dir: Path) -> Path:
     if output_dir.exists():
         raise FileExistsError(f"refusing to overwrite existing example directory: {output_dir}")
@@ -53,7 +74,7 @@ def build(output_dir: Path) -> Path:
         encoding="utf-8",
     )
     topology = output_dir / "canonical.parm7"
-    topology.write_text("synthetic topology identity placeholder\n", encoding="utf-8")
+    _write_minimal_parm7(topology)
 
     frames = 620
     coordinates = np.zeros((frames, 5, 3), dtype=np.float32)
