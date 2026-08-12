@@ -41,6 +41,7 @@ The command stops unless:
 - at least 15 exact-ligand groups remain after label-blind feature and quality
   preparation;
 - prospective identities are absent from the supplied N31 identity ledger;
+- case-only aliases cannot create extra ligand groups or split target families;
 - audited identity and exact-ligand group form a one-to-one mapping;
 - each exact-ligand group has one predeclared target-family assignment;
 - system identifiers are unique and feature-receipt system, condition, and
@@ -58,9 +59,11 @@ error would change the prospective question.
 
 Outputs are `frozen_cohort.tsv`, `development_identity_snapshot.tsv`,
 `prediction_ledger.tsv`, and `freeze_receipt.json`. The receipt records one
-combined digest for the three tables and one model-bundle digest. These files
-may contain private chemical identities and must not be committed or
-redistributed without explicit permission.
+combined digest for the three tables and one digest for the fixed bundled
+model set. The frozen cohort also records a content binding for every input
+feature receipt, so later path or receipt drift cannot silently change what
+was frozen. These files may contain private chemical identities and must not
+be committed or redistributed without explicit permission.
 
 After a successful freeze, do not add, remove, replace, or relabel systems,
 groups, target families, profiles, or predictions. If preparation fails,

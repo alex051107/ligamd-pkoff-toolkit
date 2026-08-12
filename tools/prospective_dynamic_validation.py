@@ -47,6 +47,7 @@ COHORT_FIELDS = (
     "target_family",
     "features_json_path",
 )
+FROZEN_COHORT_FIELDS = COHORT_FIELDS + ("feature_receipt_sha256",)
 LABEL_FIELDS = ("system_id", "experimental_pKoff")
 MODEL_ROLES = {
     "static20_ridge": "PRIMARY_STATIC_REFERENCE",
@@ -132,11 +133,27 @@ def _validate_many_to_one(frame: pd.DataFrame, left: str, right: str) -> None:
     _require(bool((counts == 1).all()), f"each {left} must map to exactly one {right}")
 
 
+def _reject_casefold_aliases(frame: pd.DataFrame, column: str, source: str) -> None:
+    values = frame[column].astype(str)
+    alias_counts = (
+        pd.DataFrame({"value": values, "comparison_key": values.str.casefold()})
+        .drop_duplicates()
+        .groupby("comparison_key", sort=False)["value"]
+        .nunique()
+    )
+    _require(
+        bool((alias_counts == 1).all()),
+        f"{source} contains case-only aliases in {column}",
+    )
+
+
 def _prepare_cohort(path: Path) -> pd.DataFrame:
     raw = _read_tsv(path)
     _reject_label_columns(raw.columns, "cohort")
     cohort = _clean_required(raw, COHORT_FIELDS, "cohort")
     _require(cohort["system_id"].is_unique, "cohort system_id values must be unique")
+    for column in ("audited_ligand_identity", "exact_ligand_group", "target_family"):
+        _reject_casefold_aliases(cohort, column, "cohort")
     _validate_bijection(cohort, "audited_ligand_identity", "exact_ligand_group")
     _validate_many_to_one(cohort, "exact_ligand_group", "target_family")
     _require(
@@ -199,13 +216,12 @@ def freeze(
     cohort_path: Path,
     development_identities_path: Path,
     output_dir: Path,
-    registry_path: Path = toolkit.DEFAULT_MODEL_REGISTRY,
 ) -> Mapping[str, Any]:
     """Freeze cohort membership, identities and four pre-label predictions."""
 
     _require(not output_dir.exists(), f"refusing to overwrite freeze output: {output_dir}")
     cohort_path = cohort_path.resolve()
-    registry_path = registry_path.resolve()
+    registry_path = toolkit.DEFAULT_MODEL_REGISTRY.resolve()
     cohort = _prepare_cohort(cohort_path)
     development = _prepare_development_identities(development_identities_path.resolve())
     prospective_identities = set(cohort["audited_ligand_identity"].str.casefold())
@@ -220,6 +236,10 @@ def freeze(
             feature_path = _resolve_feature_path(cohort_path, str(row["features_json_path"]))
             feature_payload = toolkit._read_json(feature_path)
             _reject_label_columns(feature_payload.keys(), f"feature receipt {feature_path}")
+            feature_receipt_sha256 = _digest_files(((str(row["system_id"]), feature_path),))
+            cohort.loc[cohort["system_id"] == row["system_id"], "feature_receipt_sha256"] = (
+                feature_receipt_sha256
+            )
             for model_id, role in MODEL_ROLES.items():
                 prediction = toolkit.predict(
                     features_path=feature_path,
@@ -268,7 +288,7 @@ def freeze(
     cohort_output = output_dir / "frozen_cohort.tsv"
     development_output = output_dir / "development_identity_snapshot.tsv"
     ledger_output = output_dir / "prediction_ledger.tsv"
-    _write_tsv(cohort_output, cohort, COHORT_FIELDS)
+    _write_tsv(cohort_output, cohort, FROZEN_COHORT_FIELDS)
     _write_tsv(development_output, development, ("audited_ligand_identity",))
     ledger = pd.DataFrame(prediction_rows).sort_values(["system_id", "model_id"], kind="stable")
     _write_tsv(ledger_output, ledger, ledger.columns)
@@ -431,7 +451,7 @@ def evaluate(
     )
     output_dir.mkdir(parents=True, exist_ok=False)
     raw_cohort = _read_tsv(frozen_cohort_path)
-    cohort = _clean_required(raw_cohort, COHORT_FIELDS, "frozen cohort")
+    cohort = _clean_required(raw_cohort, FROZEN_COHORT_FIELDS, "frozen cohort")
     _require(cohort["system_id"].is_unique, "frozen cohort system_id values must be unique")
     frozen_systems = set(cohort["system_id"])
     group_count = cohort["exact_ligand_group"].nunique()
@@ -560,7 +580,6 @@ def build_parser() -> argparse.ArgumentParser:
     freeze_parser.add_argument("--cohort", type=Path, required=True)
     freeze_parser.add_argument("--development-identities", type=Path, required=True)
     freeze_parser.add_argument("--output-dir", type=Path, required=True)
-    freeze_parser.add_argument("--model-registry", type=Path, default=toolkit.DEFAULT_MODEL_REGISTRY)
     evaluate_parser = commands.add_parser("evaluate", help="evaluate labels against frozen predictions")
     evaluate_parser.add_argument("--freeze-dir", type=Path, required=True)
     evaluate_parser.add_argument("--labels", type=Path, required=True)
@@ -575,7 +594,6 @@ def main(argv: list[str] | None = None) -> int:
             cohort_path=args.cohort,
             development_identities_path=args.development_identities,
             output_dir=args.output_dir,
-            registry_path=args.model_registry,
         )
     else:
         evaluate(

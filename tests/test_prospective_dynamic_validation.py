@@ -39,6 +39,8 @@ def _frozen_inputs(tmp_path: Path) -> Path:
     freeze_dir = tmp_path / "freeze"
     freeze_dir.mkdir()
     cohort = _cohort_rows()
+    for index, row in enumerate(cohort):
+        row["feature_receipt_sha256"] = f"frozen-feature-{index:02d}"
     cohort_path = freeze_dir / "frozen_cohort.tsv"
     _write_tsv(cohort_path, cohort)
     ledger_rows: list[dict[str, object]] = []
@@ -101,6 +103,35 @@ def test_freeze_rejects_development_identity_overlap(tmp_path: Path) -> None:
             cohort_path=cohort_path,
             development_identities_path=development_path,
             output_dir=tmp_path / "freeze-output",
+        )
+
+
+def test_freeze_rejects_case_only_identity_and_family_aliases(tmp_path: Path) -> None:
+    development_path = tmp_path / "development.tsv"
+    _write_tsv(development_path, [{"audited_ligand_identity": "development-only"}])
+
+    identity_aliases = _cohort_rows()
+    identity_aliases[1]["audited_ligand_identity"] = str(
+        identity_aliases[0]["audited_ligand_identity"]
+    ).upper()
+    identity_path = tmp_path / "identity-aliases.tsv"
+    _write_tsv(identity_path, identity_aliases)
+    with pytest.raises(ProspectiveValidationError, match="case-only aliases"):
+        freeze(
+            cohort_path=identity_path,
+            development_identities_path=development_path,
+            output_dir=tmp_path / "identity-output",
+        )
+
+    family_aliases = _cohort_rows()
+    family_aliases[1]["target_family"] = "hsp90"
+    family_path = tmp_path / "family-aliases.tsv"
+    _write_tsv(family_path, family_aliases)
+    with pytest.raises(ProspectiveValidationError, match="case-only aliases"):
+        freeze(
+            cohort_path=family_path,
+            development_identities_path=development_path,
+            output_dir=tmp_path / "family-output",
         )
 
 
