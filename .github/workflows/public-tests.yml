@@ -1,0 +1,33 @@
+name: public tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  focused-public-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: ligamd-pkoff-toolkit
+          environment-file: environment.yml
+          auto-activate-base: false
+      - name: Build and install the release wheel without replacing the Conda scientific stack
+        shell: bash -l {0}
+        run: |
+          python -m pip wheel --no-build-isolation --no-deps --wheel-dir /tmp/ligamd-pkoff-wheel .
+          python -m pip install --no-deps /tmp/ligamd-pkoff-wheel/*.whl
+      - name: Confirm the installed wheel carries its contracts and model files
+        shell: bash -l {0}
+        run: |
+          cd /tmp
+          python -c "import json; from ligamd_pkoff.resources import bundled_path; endpoint=bundled_path('contracts/endpoint_v2.json'); sampler=bundled_path('contracts/p512_sampler_v1.json'); registry=bundled_path('models/experimental_n31_registry_v1/model_registry.json'); assert json.loads(endpoint.read_text())['schema_version'] == 'ligamd_endpoint_contract_v2.0'; assert json.loads(sampler.read_text())['schema_version'] == 'ligamd_p512_sampler_contract_v1.0'; assert all((registry.parent / profile['artifact']).is_file() for profile in json.loads(registry.read_text())['profiles'].values())"
+      - name: Run public regression tests
+        shell: bash -l {0}
+        run: python -m pytest -q tests
+      - name: Check the public release boundary
+        shell: bash -l {0}
+        run: python tools/verify_public_release.py

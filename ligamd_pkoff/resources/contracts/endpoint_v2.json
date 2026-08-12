@@ -1,0 +1,60 @@
+{
+  "schema_version": "ligamd_endpoint_contract_v2.0",
+  "contract_id": "ENDPOINT_V2_ALIGNED_CENTROID_GE15_AND_GLOBAL_HEAVY_CLEARANCE_GT10_FOR_100_CONSECUTIVE_SAVED_FRAMES",
+  "status": "FROZEN_ENGINEERING_ENDPOINT",
+  "purpose": "Define one label-blind, geometry-only episode boundary for the public LiGaMD pKoff toolkit. It does not estimate physical koff and does not select a sampler, representation, or model.",
+  "episode_policy": {
+    "start_index0": 0,
+    "end_index0": "first persistence-confirmed complete-exit onset, inclusive",
+    "confirmation_tail": "read only to establish persistence; excluded from frame selection and model input",
+    "post_exit_diffusion": "excluded from frame selection and model input"
+  },
+  "frame_conditions_all_required": [
+    {
+      "name": "pocket_aligned_ligand_centroid_displacement",
+      "dense_trace_column": "pose__aligned_centroid_displacement_A",
+      "operator": ">=",
+      "threshold_A": 15.0,
+      "definition": "geometric displacement of the ligand centroid after proper Kabsch alignment of frozen pocket heavy atoms to the canonical bound reference"
+    },
+    {
+      "name": "whole_protein_heavy_atom_clearance",
+      "dense_trace_column": "global__protein_min_heavy_distance_A",
+      "operator": ">",
+      "threshold_A": 10.0,
+      "definition": "minimum PBC-aware distance between any ligand heavy atom and any heavy atom in the standard-amino-acid protein universe"
+    }
+  ],
+  "persistence": {
+    "consecutive_saved_frames": 100,
+    "saved_frame_identity": "dense trace frame column must be exactly 1..N without gaps",
+    "cadence": "taken from the input manifest; the numerical contract counts saved frames and does not infer unsaved physical time"
+  },
+  "shared_reference": {
+    "canonical_bound_structure": "outcome-blind PDB supplied by the manifest",
+    "ligand_selector": "one resolved ligand residue with frozen heavy-atom order",
+    "protein_atom_universe": "ATOM records belonging to standard amino acids, heavy atoms only",
+    "pocket_residues": "canonical-PDB residues whose PBC-aware minimum heavy-atom distance to the ligand is <= 8.0 A",
+    "native_contacts": "subset of frozen pocket residues at <= 4.5 A in the canonical bound reference",
+    "alignment_atoms": "all frozen pocket heavy atoms",
+    "periodic_boundary_conditions": "orthorhombic minimum image: delta - box_length * rint(delta / box_length); non-orthorhombic cells fail closed"
+  },
+  "compatibility": {
+    "requires_dense_trace_columns": [
+      "frame",
+      "pose__aligned_centroid_displacement_A",
+      "global__protein_min_heavy_distance_A"
+    ],
+    "requires_real_saved_coordinates": true,
+    "sampler": "P512_multiblock_path_arclength with 512 unique real source frames; sampler protocol is frozen separately",
+    "trajectory_replication": "exactly three endpoint-PASS replicas, pooled by arithmetic mean"
+  },
+  "scientific_boundaries": {
+    "endpoint_is_not": [
+      "a direct physical koff estimate",
+      "proof that interaction energy is zero",
+      "a claim that all possible solvent-mediated interactions vanish"
+    ],
+    "status": "EXPERIMENTAL_ENGINEERING_DEFAULT"
+  }
+}

@@ -1,0 +1,715 @@
+{
+  "artifact_compatibility": {
+    "tested_public_runtime": {
+      "joblib": "1.5.2",
+      "numpy": "2.3.5",
+      "python": "3.13.9",
+      "scikit_learn": "1.7.2"
+    },
+    "note": "The four bundled joblib files were loaded by the public smoke test under this environment. Use environment.yml for the supported public route."
+  },
+  "endpoint": {
+    "contract_file": "../../contracts/endpoint_v2.json",
+    "episode": "production frame 0 through first persistence-confirmed onset, inclusive",
+    "spec": {
+      "displacement_field": "pose__aligned_centroid_displacement_A",
+      "displacement_min_A": 15.0,
+      "name": "endpoint_v2_two_metric_geometric_clearance",
+      "persistence_frames": 100,
+      "whole_protein_min_distance_strictly_greater_A": 10.0
+    }
+  },
+  "panel": {
+    "exact_ligand_group_count": 27,
+    "folds": {
+      "artifact_name": "folds.tsv",
+      "availability": "separately_authorised_fold_map_not_distributed",
+      "sha256": "8bddaa6ce5e475e822ee01da0c35873884563025df452141584ba581265871b7"
+    },
+    "outer_and_inner_split": "exact-ligand leave-one-group-out",
+    "preprocessing_scope": "constant/correlation reduction and scaling fit inside each training fold",
+    "source_panel": {
+      "artifact_name": "simple_endpoint_current30_supervised.tsv",
+      "availability": "separately_authorised_supervised_panel_not_distributed",
+      "sha256": "e6f73f23b96696f7a3bd60b1d4fd8edd307807aa2270a73263e55195edb435e0"
+    },
+    "system_count": 31
+  },
+  "physical_koff_estimated": false,
+  "prediction_status_rules": {
+    "CAUTION_OUTSIDE_OBSERVED_RANGE": "inputs are structurally complete but at least one required feature is outside its N31 observed range, the literal target label is unfamiliar, or a dynamic-profile cadence cannot be shown comparable",
+    "OUT_OF_SCOPE_NO_PREDICTION": "required input is missing, non-finite, wrong-dimensional, lacks three endpoint-PASS replicas for a Combined30 profile, or endpoint-v2 validation fails",
+    "WITHIN_OBSERVED_SCOPE": "all required inputs finite and within the training min/max range; protein target appears in the observed training target set"
+  },
+  "profiles": {
+    "combined30_p512_random_forest": {
+      "artifact": "models/combined30_p512_random_forest.joblib",
+      "endpoint_contract": "endpoint_v2.json",
+      "feature_block": "Combined30",
+      "full_panel_inner_logo_score": 0.8097085589511631,
+      "full_panel_inner_logo_selection_metric": "exact_ligand_group_equal_mae",
+      "full_panel_selected_hyperparameters": {
+        "max_depth": 4,
+        "max_features": "sqrt",
+        "min_samples_leaf": 1,
+        "n_estimators": 100
+      },
+      "input_feature_count": 30,
+      "input_feature_order": [
+        "ligand_static__molecular_weight",
+        "ligand_static__logP",
+        "ligand_static__HBD",
+        "ligand_static__HBA",
+        "ligand_static__TPSA",
+        "ligand_static__rotatable_bonds",
+        "ligand_static__rings",
+        "ligand_static__heavy_atoms",
+        "ligand_static__formal_charge",
+        "ligand_static__fraction_CSP3",
+        "initial_geometry__minimum_protein_ligand_heavy_distance_A",
+        "initial_geometry__native_contact_residue_count",
+        "initial_geometry__native_contact_residue_fraction_of_pocket",
+        "initial_geometry__pocket_8A_residue_count",
+        "initial_geometry__pocket_8A_heavy_atom_count",
+        "initial_geometry__pocket_8A_radius_of_gyration_A",
+        "initial_geometry__standard_protein_residue_count",
+        "initial_geometry__pocket_hydrophobic_residue_fraction",
+        "initial_geometry__pocket_polar_uncharged_residue_fraction",
+        "initial_geometry__pocket_ionizable_residue_fraction",
+        "g50v2__pocket_com_distance_A__progress_000_050__mean",
+        "g50v2__native_contact_fraction__progress_050_080__mean",
+        "g50v2__ligand_pose_rmsd_A__progress_080_095__mean",
+        "g50v2__ligand_pose_rmsd_A__progress_095_100__mean",
+        "g50v2__global_min_heavy_distance_A__progress_095_100__mean",
+        "g50v2__global_contact_fraction__progress_000_050__mean",
+        "g50v2__global_contact_fraction__progress_080_095__mean",
+        "g50v2__state_progress_occupancy__I",
+        "g50v2__state_progress_occupancy__P_ONLY",
+        "g50v2__ligand_internal_rmsd_A__progress_mean"
+      ],
+      "model_family": "random_forest",
+      "replica_pooling": "arithmetic_mean_of_exactly_three_endpoint_PASS_replicas",
+      "sampler": "P512",
+      "training_saved_frame_interval_ps": null,
+      "training_cadence_status": "NOT_RECONSTRUCTED_FROM_FROZEN_N31_ARTIFACTS",
+      "scientific_status": "EXPERIMENTAL",
+      "scope_limitations": [
+        "predictions target experimental pKoff labels; they are not physical koff estimates",
+        "range checks are plausibility warnings, not evidence of external generalization",
+        "the N31 panel is a frozen engineering panel; no profile is a selected final scientific model"
+      ],
+      "training_exact_ligand_group_count": 27,
+      "training_feature_ranges": {
+        "g50v2__global_contact_fraction__progress_000_050__mean": {
+          "maximum": 0.0943287037037033,
+          "minimum": 0.0122338598901098
+        },
+        "g50v2__global_contact_fraction__progress_080_095__mean": {
+          "maximum": 0.0561951754385964,
+          "minimum": 0.0048558897243107
+        },
+        "g50v2__global_min_heavy_distance_A__progress_095_100__mean": {
+          "maximum": 9.053095576515764,
+          "minimum": 3.4685360090018675
+        },
+        "g50v2__ligand_internal_rmsd_A__progress_mean": {
+          "maximum": 3.9881719474716046,
+          "minimum": 0.2959567746208281
+        },
+        "g50v2__ligand_pose_rmsd_A__progress_080_095__mean": {
+          "maximum": 27.58353230746079,
+          "minimum": 1.4995896566184082
+        },
+        "g50v2__ligand_pose_rmsd_A__progress_095_100__mean": {
+          "maximum": 35.32059306983084,
+          "minimum": 9.202694777205606
+        },
+        "g50v2__native_contact_fraction__progress_050_080__mean": {
+          "maximum": 0.7923351158645273,
+          "minimum": 0.0057720057720057
+        },
+        "g50v2__pocket_com_distance_A__progress_000_050__mean": {
+          "maximum": 19.514826147897463,
+          "minimum": 1.9859777310788385
+        },
+        "g50v2__state_progress_occupancy__I": {
+          "maximum": 0.8567708333333334,
+          "minimum": 0.04296875
+        },
+        "g50v2__state_progress_occupancy__P_ONLY": {
+          "maximum": 0.6881510416666666,
+          "minimum": 0.0006510416666666
+        },
+        "initial_geometry__minimum_protein_ligand_heavy_distance_A": {
+          "maximum": 2.95016101,
+          "minimum": 1.37655294
+        },
+        "initial_geometry__native_contact_residue_count": {
+          "maximum": 32.0,
+          "minimum": 14.0
+        },
+        "initial_geometry__native_contact_residue_fraction_of_pocket": {
+          "maximum": 0.4923076923076923,
+          "minimum": 0.2666666666666666
+        },
+        "initial_geometry__pocket_8A_heavy_atom_count": {
+          "maximum": 496.0,
+          "minimum": 297.0
+        },
+        "initial_geometry__pocket_8A_radius_of_gyration_A": {
+          "maximum": 12.057621618849744,
+          "minimum": 9.886483434322372
+        },
+        "initial_geometry__pocket_8A_residue_count": {
+          "maximum": 68.0,
+          "minimum": 40.0
+        },
+        "initial_geometry__pocket_hydrophobic_residue_fraction": {
+          "maximum": 0.6923076923076923,
+          "minimum": 0.3846153846153846
+        },
+        "initial_geometry__pocket_ionizable_residue_fraction": {
+          "maximum": 0.3333333333333333,
+          "minimum": 0.140625
+        },
+        "initial_geometry__pocket_polar_uncharged_residue_fraction": {
+          "maximum": 0.3653846153846153,
+          "minimum": 0.0952380952380952
+        },
+        "initial_geometry__standard_protein_residue_count": {
+          "maximum": 729.0,
+          "minimum": 198.0
+        },
+        "ligand_static__HBA": {
+          "maximum": 10.0,
+          "minimum": 3.0
+        },
+        "ligand_static__HBD": {
+          "maximum": 7.0,
+          "minimum": 1.0
+        },
+        "ligand_static__TPSA": {
+          "maximum": 208.90999999999997,
+          "minimum": 53.940000000000005
+        },
+        "ligand_static__formal_charge": {
+          "maximum": 1.0,
+          "minimum": 0.0
+        },
+        "ligand_static__fraction_CSP3": {
+          "maximum": 0.8888888888888888,
+          "minimum": 0.0
+        },
+        "ligand_static__heavy_atoms": {
+          "maximum": 59.0,
+          "minimum": 21.0
+        },
+        "ligand_static__logP": {
+          "maximum": 5.001000000000003,
+          "minimum": 0.1802999999999995
+        },
+        "ligand_static__molecular_weight": {
+          "maximum": 813.0329999999999,
+          "minimum": 287.25
+        },
+        "ligand_static__rings": {
+          "maximum": 7.0,
+          "minimum": 3.0
+        },
+        "ligand_static__rotatable_bonds": {
+          "maximum": 21.0,
+          "minimum": 2.0
+        }
+      },
+      "training_protein_targets": [
+        "CDK2 Kinase",
+        "Cyclin-dependent kinase 2",
+        "Dipeptidyl peptidase IV",
+        "Glucose Regulated Protein",
+        "HIV-1 Protease",
+        "HSP90",
+        "Heat shock protein HSP 90-alpha",
+        "N-terminal human HSP90",
+        "human DPP4"
+      ],
+      "training_system_count": 31
+    },
+    "combined30_p512_ridge": {
+      "artifact": "models/combined30_p512_ridge.joblib",
+      "endpoint_contract": "endpoint_v2.json",
+      "feature_block": "Combined30",
+      "full_panel_inner_logo_score": 0.8181690739115521,
+      "full_panel_inner_logo_selection_metric": "exact_ligand_group_equal_mae",
+      "full_panel_selected_hyperparameters": {
+        "alpha": 100.0
+      },
+      "input_feature_count": 30,
+      "input_feature_order": [
+        "ligand_static__molecular_weight",
+        "ligand_static__logP",
+        "ligand_static__HBD",
+        "ligand_static__HBA",
+        "ligand_static__TPSA",
+        "ligand_static__rotatable_bonds",
+        "ligand_static__rings",
+        "ligand_static__heavy_atoms",
+        "ligand_static__formal_charge",
+        "ligand_static__fraction_CSP3",
+        "initial_geometry__minimum_protein_ligand_heavy_distance_A",
+        "initial_geometry__native_contact_residue_count",
+        "initial_geometry__native_contact_residue_fraction_of_pocket",
+        "initial_geometry__pocket_8A_residue_count",
+        "initial_geometry__pocket_8A_heavy_atom_count",
+        "initial_geometry__pocket_8A_radius_of_gyration_A",
+        "initial_geometry__standard_protein_residue_count",
+        "initial_geometry__pocket_hydrophobic_residue_fraction",
+        "initial_geometry__pocket_polar_uncharged_residue_fraction",
+        "initial_geometry__pocket_ionizable_residue_fraction",
+        "g50v2__pocket_com_distance_A__progress_000_050__mean",
+        "g50v2__native_contact_fraction__progress_050_080__mean",
+        "g50v2__ligand_pose_rmsd_A__progress_080_095__mean",
+        "g50v2__ligand_pose_rmsd_A__progress_095_100__mean",
+        "g50v2__global_min_heavy_distance_A__progress_095_100__mean",
+        "g50v2__global_contact_fraction__progress_000_050__mean",
+        "g50v2__global_contact_fraction__progress_080_095__mean",
+        "g50v2__state_progress_occupancy__I",
+        "g50v2__state_progress_occupancy__P_ONLY",
+        "g50v2__ligand_internal_rmsd_A__progress_mean"
+      ],
+      "model_family": "ridge",
+      "replica_pooling": "arithmetic_mean_of_exactly_three_endpoint_PASS_replicas",
+      "sampler": "P512",
+      "training_saved_frame_interval_ps": null,
+      "training_cadence_status": "NOT_RECONSTRUCTED_FROM_FROZEN_N31_ARTIFACTS",
+      "scientific_status": "EXPERIMENTAL",
+      "scope_limitations": [
+        "predictions target experimental pKoff labels; they are not physical koff estimates",
+        "range checks are plausibility warnings, not evidence of external generalization",
+        "the N31 panel is a frozen engineering panel; no profile is a selected final scientific model"
+      ],
+      "training_exact_ligand_group_count": 27,
+      "training_feature_ranges": {
+        "g50v2__global_contact_fraction__progress_000_050__mean": {
+          "maximum": 0.0943287037037033,
+          "minimum": 0.0122338598901098
+        },
+        "g50v2__global_contact_fraction__progress_080_095__mean": {
+          "maximum": 0.0561951754385964,
+          "minimum": 0.0048558897243107
+        },
+        "g50v2__global_min_heavy_distance_A__progress_095_100__mean": {
+          "maximum": 9.053095576515764,
+          "minimum": 3.4685360090018675
+        },
+        "g50v2__ligand_internal_rmsd_A__progress_mean": {
+          "maximum": 3.9881719474716046,
+          "minimum": 0.2959567746208281
+        },
+        "g50v2__ligand_pose_rmsd_A__progress_080_095__mean": {
+          "maximum": 27.58353230746079,
+          "minimum": 1.4995896566184082
+        },
+        "g50v2__ligand_pose_rmsd_A__progress_095_100__mean": {
+          "maximum": 35.32059306983084,
+          "minimum": 9.202694777205606
+        },
+        "g50v2__native_contact_fraction__progress_050_080__mean": {
+          "maximum": 0.7923351158645273,
+          "minimum": 0.0057720057720057
+        },
+        "g50v2__pocket_com_distance_A__progress_000_050__mean": {
+          "maximum": 19.514826147897463,
+          "minimum": 1.9859777310788385
+        },
+        "g50v2__state_progress_occupancy__I": {
+          "maximum": 0.8567708333333334,
+          "minimum": 0.04296875
+        },
+        "g50v2__state_progress_occupancy__P_ONLY": {
+          "maximum": 0.6881510416666666,
+          "minimum": 0.0006510416666666
+        },
+        "initial_geometry__minimum_protein_ligand_heavy_distance_A": {
+          "maximum": 2.95016101,
+          "minimum": 1.37655294
+        },
+        "initial_geometry__native_contact_residue_count": {
+          "maximum": 32.0,
+          "minimum": 14.0
+        },
+        "initial_geometry__native_contact_residue_fraction_of_pocket": {
+          "maximum": 0.4923076923076923,
+          "minimum": 0.2666666666666666
+        },
+        "initial_geometry__pocket_8A_heavy_atom_count": {
+          "maximum": 496.0,
+          "minimum": 297.0
+        },
+        "initial_geometry__pocket_8A_radius_of_gyration_A": {
+          "maximum": 12.057621618849744,
+          "minimum": 9.886483434322372
+        },
+        "initial_geometry__pocket_8A_residue_count": {
+          "maximum": 68.0,
+          "minimum": 40.0
+        },
+        "initial_geometry__pocket_hydrophobic_residue_fraction": {
+          "maximum": 0.6923076923076923,
+          "minimum": 0.3846153846153846
+        },
+        "initial_geometry__pocket_ionizable_residue_fraction": {
+          "maximum": 0.3333333333333333,
+          "minimum": 0.140625
+        },
+        "initial_geometry__pocket_polar_uncharged_residue_fraction": {
+          "maximum": 0.3653846153846153,
+          "minimum": 0.0952380952380952
+        },
+        "initial_geometry__standard_protein_residue_count": {
+          "maximum": 729.0,
+          "minimum": 198.0
+        },
+        "ligand_static__HBA": {
+          "maximum": 10.0,
+          "minimum": 3.0
+        },
+        "ligand_static__HBD": {
+          "maximum": 7.0,
+          "minimum": 1.0
+        },
+        "ligand_static__TPSA": {
+          "maximum": 208.90999999999997,
+          "minimum": 53.940000000000005
+        },
+        "ligand_static__formal_charge": {
+          "maximum": 1.0,
+          "minimum": 0.0
+        },
+        "ligand_static__fraction_CSP3": {
+          "maximum": 0.8888888888888888,
+          "minimum": 0.0
+        },
+        "ligand_static__heavy_atoms": {
+          "maximum": 59.0,
+          "minimum": 21.0
+        },
+        "ligand_static__logP": {
+          "maximum": 5.001000000000003,
+          "minimum": 0.1802999999999995
+        },
+        "ligand_static__molecular_weight": {
+          "maximum": 813.0329999999999,
+          "minimum": 287.25
+        },
+        "ligand_static__rings": {
+          "maximum": 7.0,
+          "minimum": 3.0
+        },
+        "ligand_static__rotatable_bonds": {
+          "maximum": 21.0,
+          "minimum": 2.0
+        }
+      },
+      "training_protein_targets": [
+        "CDK2 Kinase",
+        "Cyclin-dependent kinase 2",
+        "Dipeptidyl peptidase IV",
+        "Glucose Regulated Protein",
+        "HIV-1 Protease",
+        "HSP90",
+        "Heat shock protein HSP 90-alpha",
+        "N-terminal human HSP90",
+        "human DPP4"
+      ],
+      "training_system_count": 31
+    },
+    "static20_random_forest": {
+      "artifact": "models/static20_random_forest.joblib",
+      "endpoint_contract": "canonical_bound_structure_only",
+      "feature_block": "Static20",
+      "full_panel_inner_logo_score": 0.8393132539283991,
+      "full_panel_inner_logo_selection_metric": "exact_ligand_group_equal_mae",
+      "full_panel_selected_hyperparameters": {
+        "max_depth": 3,
+        "max_features": "sqrt",
+        "min_samples_leaf": 2,
+        "n_estimators": 100
+      },
+      "input_feature_count": 20,
+      "input_feature_order": [
+        "ligand_static__molecular_weight",
+        "ligand_static__logP",
+        "ligand_static__HBD",
+        "ligand_static__HBA",
+        "ligand_static__TPSA",
+        "ligand_static__rotatable_bonds",
+        "ligand_static__rings",
+        "ligand_static__heavy_atoms",
+        "ligand_static__formal_charge",
+        "ligand_static__fraction_CSP3",
+        "initial_geometry__minimum_protein_ligand_heavy_distance_A",
+        "initial_geometry__native_contact_residue_count",
+        "initial_geometry__native_contact_residue_fraction_of_pocket",
+        "initial_geometry__pocket_8A_residue_count",
+        "initial_geometry__pocket_8A_heavy_atom_count",
+        "initial_geometry__pocket_8A_radius_of_gyration_A",
+        "initial_geometry__standard_protein_residue_count",
+        "initial_geometry__pocket_hydrophobic_residue_fraction",
+        "initial_geometry__pocket_polar_uncharged_residue_fraction",
+        "initial_geometry__pocket_ionizable_residue_fraction"
+      ],
+      "model_family": "random_forest",
+      "replica_pooling": null,
+      "sampler": null,
+      "scientific_status": "EXPERIMENTAL",
+      "scope_limitations": [
+        "predictions target experimental pKoff labels; they are not physical koff estimates",
+        "range checks are plausibility warnings, not evidence of external generalization",
+        "the N31 panel is a frozen engineering panel; no profile is a selected final scientific model"
+      ],
+      "training_exact_ligand_group_count": 27,
+      "training_feature_ranges": {
+        "initial_geometry__minimum_protein_ligand_heavy_distance_A": {
+          "maximum": 2.95016101,
+          "minimum": 1.37655294
+        },
+        "initial_geometry__native_contact_residue_count": {
+          "maximum": 32.0,
+          "minimum": 14.0
+        },
+        "initial_geometry__native_contact_residue_fraction_of_pocket": {
+          "maximum": 0.4923076923076923,
+          "minimum": 0.2666666666666666
+        },
+        "initial_geometry__pocket_8A_heavy_atom_count": {
+          "maximum": 496.0,
+          "minimum": 297.0
+        },
+        "initial_geometry__pocket_8A_radius_of_gyration_A": {
+          "maximum": 12.057621618849744,
+          "minimum": 9.886483434322372
+        },
+        "initial_geometry__pocket_8A_residue_count": {
+          "maximum": 68.0,
+          "minimum": 40.0
+        },
+        "initial_geometry__pocket_hydrophobic_residue_fraction": {
+          "maximum": 0.6923076923076923,
+          "minimum": 0.3846153846153846
+        },
+        "initial_geometry__pocket_ionizable_residue_fraction": {
+          "maximum": 0.3333333333333333,
+          "minimum": 0.140625
+        },
+        "initial_geometry__pocket_polar_uncharged_residue_fraction": {
+          "maximum": 0.3653846153846153,
+          "minimum": 0.0952380952380952
+        },
+        "initial_geometry__standard_protein_residue_count": {
+          "maximum": 729.0,
+          "minimum": 198.0
+        },
+        "ligand_static__HBA": {
+          "maximum": 10.0,
+          "minimum": 3.0
+        },
+        "ligand_static__HBD": {
+          "maximum": 7.0,
+          "minimum": 1.0
+        },
+        "ligand_static__TPSA": {
+          "maximum": 208.90999999999997,
+          "minimum": 53.940000000000005
+        },
+        "ligand_static__formal_charge": {
+          "maximum": 1.0,
+          "minimum": 0.0
+        },
+        "ligand_static__fraction_CSP3": {
+          "maximum": 0.8888888888888888,
+          "minimum": 0.0
+        },
+        "ligand_static__heavy_atoms": {
+          "maximum": 59.0,
+          "minimum": 21.0
+        },
+        "ligand_static__logP": {
+          "maximum": 5.001000000000003,
+          "minimum": 0.1802999999999995
+        },
+        "ligand_static__molecular_weight": {
+          "maximum": 813.0329999999999,
+          "minimum": 287.25
+        },
+        "ligand_static__rings": {
+          "maximum": 7.0,
+          "minimum": 3.0
+        },
+        "ligand_static__rotatable_bonds": {
+          "maximum": 21.0,
+          "minimum": 2.0
+        }
+      },
+      "training_protein_targets": [
+        "CDK2 Kinase",
+        "Cyclin-dependent kinase 2",
+        "Dipeptidyl peptidase IV",
+        "Glucose Regulated Protein",
+        "HIV-1 Protease",
+        "HSP90",
+        "Heat shock protein HSP 90-alpha",
+        "N-terminal human HSP90",
+        "human DPP4"
+      ],
+      "training_system_count": 31
+    },
+    "static20_ridge": {
+      "artifact": "models/static20_ridge.joblib",
+      "endpoint_contract": "canonical_bound_structure_only",
+      "feature_block": "Static20",
+      "full_panel_inner_logo_score": 0.8097982231652934,
+      "full_panel_inner_logo_selection_metric": "exact_ligand_group_equal_mae",
+      "full_panel_selected_hyperparameters": {
+        "alpha": 100.0
+      },
+      "input_feature_count": 20,
+      "input_feature_order": [
+        "ligand_static__molecular_weight",
+        "ligand_static__logP",
+        "ligand_static__HBD",
+        "ligand_static__HBA",
+        "ligand_static__TPSA",
+        "ligand_static__rotatable_bonds",
+        "ligand_static__rings",
+        "ligand_static__heavy_atoms",
+        "ligand_static__formal_charge",
+        "ligand_static__fraction_CSP3",
+        "initial_geometry__minimum_protein_ligand_heavy_distance_A",
+        "initial_geometry__native_contact_residue_count",
+        "initial_geometry__native_contact_residue_fraction_of_pocket",
+        "initial_geometry__pocket_8A_residue_count",
+        "initial_geometry__pocket_8A_heavy_atom_count",
+        "initial_geometry__pocket_8A_radius_of_gyration_A",
+        "initial_geometry__standard_protein_residue_count",
+        "initial_geometry__pocket_hydrophobic_residue_fraction",
+        "initial_geometry__pocket_polar_uncharged_residue_fraction",
+        "initial_geometry__pocket_ionizable_residue_fraction"
+      ],
+      "model_family": "ridge",
+      "replica_pooling": null,
+      "sampler": null,
+      "scientific_status": "EXPERIMENTAL",
+      "scope_limitations": [
+        "predictions target experimental pKoff labels; they are not physical koff estimates",
+        "range checks are plausibility warnings, not evidence of external generalization",
+        "the N31 panel is a frozen engineering panel; no profile is a selected final scientific model"
+      ],
+      "training_exact_ligand_group_count": 27,
+      "training_feature_ranges": {
+        "initial_geometry__minimum_protein_ligand_heavy_distance_A": {
+          "maximum": 2.95016101,
+          "minimum": 1.37655294
+        },
+        "initial_geometry__native_contact_residue_count": {
+          "maximum": 32.0,
+          "minimum": 14.0
+        },
+        "initial_geometry__native_contact_residue_fraction_of_pocket": {
+          "maximum": 0.4923076923076923,
+          "minimum": 0.2666666666666666
+        },
+        "initial_geometry__pocket_8A_heavy_atom_count": {
+          "maximum": 496.0,
+          "minimum": 297.0
+        },
+        "initial_geometry__pocket_8A_radius_of_gyration_A": {
+          "maximum": 12.057621618849744,
+          "minimum": 9.886483434322372
+        },
+        "initial_geometry__pocket_8A_residue_count": {
+          "maximum": 68.0,
+          "minimum": 40.0
+        },
+        "initial_geometry__pocket_hydrophobic_residue_fraction": {
+          "maximum": 0.6923076923076923,
+          "minimum": 0.3846153846153846
+        },
+        "initial_geometry__pocket_ionizable_residue_fraction": {
+          "maximum": 0.3333333333333333,
+          "minimum": 0.140625
+        },
+        "initial_geometry__pocket_polar_uncharged_residue_fraction": {
+          "maximum": 0.3653846153846153,
+          "minimum": 0.0952380952380952
+        },
+        "initial_geometry__standard_protein_residue_count": {
+          "maximum": 729.0,
+          "minimum": 198.0
+        },
+        "ligand_static__HBA": {
+          "maximum": 10.0,
+          "minimum": 3.0
+        },
+        "ligand_static__HBD": {
+          "maximum": 7.0,
+          "minimum": 1.0
+        },
+        "ligand_static__TPSA": {
+          "maximum": 208.90999999999997,
+          "minimum": 53.940000000000005
+        },
+        "ligand_static__formal_charge": {
+          "maximum": 1.0,
+          "minimum": 0.0
+        },
+        "ligand_static__fraction_CSP3": {
+          "maximum": 0.8888888888888888,
+          "minimum": 0.0
+        },
+        "ligand_static__heavy_atoms": {
+          "maximum": 59.0,
+          "minimum": 21.0
+        },
+        "ligand_static__logP": {
+          "maximum": 5.001000000000003,
+          "minimum": 0.1802999999999995
+        },
+        "ligand_static__molecular_weight": {
+          "maximum": 813.0329999999999,
+          "minimum": 287.25
+        },
+        "ligand_static__rings": {
+          "maximum": 7.0,
+          "minimum": 3.0
+        },
+        "ligand_static__rotatable_bonds": {
+          "maximum": 21.0,
+          "minimum": 2.0
+        }
+      },
+      "training_protein_targets": [
+        "CDK2 Kinase",
+        "Cyclin-dependent kinase 2",
+        "Dipeptidyl peptidase IV",
+        "Glucose Regulated Protein",
+        "HIV-1 Protease",
+        "HSP90",
+        "Heat shock protein HSP 90-alpha",
+        "N-terminal human HSP90",
+        "human DPP4"
+      ],
+      "training_system_count": 31
+    }
+  },
+  "reused_evidence": {
+    "n31_combined_oof": {
+      "artifact_name": "OOF_PREDICTIONS_ALL_COMBINATIONS_v1.tsv",
+      "availability": "separately_authorised_saved_OOF_not_distributed",
+      "sha256": "c6eb057fdd3a10d0bc9a08aea220233a332766741a8e55c220d9ae7f1ea4a212"
+    },
+    "reason": "compatible simple-two-metric/P512/Combined30 N31 cells were already frozen; not rerun"
+  },
+  "schema_version": "ligamd_experimental_model_registry_v1.0",
+  "scientific_status": "EXPERIMENTAL",
+  "target": "experimental_pKoff"
+}

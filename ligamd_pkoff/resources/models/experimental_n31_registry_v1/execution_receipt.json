@@ -1,0 +1,19 @@
+{
+  "bootstrap_repeats": 5000,
+  "claims": {
+    "model_selected": false,
+    "physical_koff_estimated": false,
+    "representation_selected": false,
+    "sampler_selected": false
+  },
+  "full_fit_profiles": [
+    "static20_ridge",
+    "static20_random_forest",
+    "combined30_p512_ridge",
+    "combined30_p512_random_forest"
+  ],
+  "oof_combined_cells_recomputed": false,
+  "oof_static_cells_recomputed": true,
+  "schema_version": "ligamd_experimental_model_registry_v1.0",
+  "status": "PASS_EXPERIMENTAL_N31_REGISTRY_BUILT"
+}

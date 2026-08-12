@@ -1,0 +1,43 @@
+{
+  "schema_version": "ligamd_frozen_n31_registry_input_provenance_v1.0",
+  "purpose": "Rebuild only the frozen experimental N31 registry from separately authorised inputs. This receipt contains digests and semantic expectations, not system identities, assay labels, or out-of-fold predictions.",
+  "input_artifacts": {
+    "source_panel": {
+      "artifact_name": "simple_endpoint_current30_supervised.tsv",
+      "sha256": "e6f73f23b96696f7a3bd60b1d4fd8edd307807aa2270a73263e55195edb435e0"
+    },
+    "folds": {
+      "artifact_name": "folds.tsv",
+      "sha256": "8bddaa6ce5e475e822ee01da0c35873884563025df452141584ba581265871b7"
+    },
+    "reused_oof": {
+      "artifact_name": "OOF_PREDICTIONS_ALL_COMBINATIONS_v1.tsv",
+      "sha256": "c6eb057fdd3a10d0bc9a08aea220233a332766741a8e55c220d9ae7f1ea4a212"
+    }
+  },
+  "endpoint_contract": {
+    "contract_id": "ENDPOINT_V2_ALIGNED_CENTROID_GE15_AND_GLOBAL_HEAVY_CLEARANCE_GT10_FOR_100_CONSECUTIVE_SAVED_FRAMES",
+    "sha256": "965d24e78656ba00141d9980aa401d893e3a783d38d9a595604bdb6cfb9e70c0"
+  },
+  "reused_oof_cell_contract": {
+    "endpoint_arm": "simple_two_metric",
+    "sampler": "P512",
+    "combined_feature_block": "Combined30",
+    "dummy_feature_block": "No_features",
+    "models": ["ridge", "random_forest", "dummy_median"],
+    "system_count": 31,
+    "group_split": "exact_ligand_leave_one_group_out",
+    "required_columns": [
+      "system_id",
+      "endpoint_arm",
+      "sampler",
+      "feature_block",
+      "model",
+      "experimental_pKoff",
+      "exact_ligand_group",
+      "held_out_exact_ligand_group",
+      "outer_test_fold",
+      "predicted_pKoff"
+    ]
+  }
+}

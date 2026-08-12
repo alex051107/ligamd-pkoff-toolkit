@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.joblib binary
+*.json text eol=lf
+*.tsv text eol=lf

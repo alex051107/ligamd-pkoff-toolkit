@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+build/
+dist/
+*.egg-info/
+.DS_Store
+
+# A public code release must not accidentally add campaign data.
+*.nc
+*.netcdf
+*.parm7
+*.prmtop
+*.rst7
+*.rst
+*.dcd
+*.xtc
+*.trr

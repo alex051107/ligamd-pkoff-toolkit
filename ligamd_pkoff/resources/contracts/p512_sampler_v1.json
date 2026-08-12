@@ -1,0 +1,35 @@
+{
+  "schema_version": "ligamd_p512_sampler_contract_v1.0",
+  "contract_id": "P512_MULTIBLOCK_PATH_ARCLENGTH_512_REAL_FRAMES",
+  "status": "FROZEN_ENGINEERING_SAMPLER",
+  "purpose": "Choose 512 unique real saved frames from the already-defined episode. This contract does not define dissociation, read labels, or select a model.",
+  "samplers": {
+    "budget": 512,
+    "shared": {
+      "allowed_interval_index0": "0 through the endpoint-v2 onset, inclusive",
+      "real_unique_frames_only": true,
+      "force_first_and_endpoint": true,
+      "causal_trailing_mean_frames": 5,
+      "scale_prefix_frames": 128,
+      "scale_rule": "per-feature MAD of first differences in the first 128 causally smoothed frames, then SD fallback, then 1.0 fallback",
+      "multiblock_normalization": "divide each scaled block by the square root of its dimension",
+      "tie_break": "earliest source frame",
+      "labels_or_model_errors_read": false
+    },
+    "P512": {
+      "definition": "equal quantiles of cumulative multiblock path arclength, with both episode endpoints forced",
+      "input_blocks": [
+        "separation: pocket geometric COM distance, aligned centroid displacement, global minimum heavy-atom distance",
+        "contact: native-contact fraction, global contact-residue count, frozen pocket contact bits",
+        "pose: aligned ligand RMSD, ligand internal RMSD, pocket-alignment RMSD"
+      ],
+      "directionality": "symmetric; leaving, returning, contact rearrangement, and pose rearrangement all contribute",
+      "duplicate_resolution": "deterministic largest-temporal-gap fill"
+    }
+  },
+  "scientific_boundaries": {
+    "sampler_selected": false,
+    "physical_koff_estimated": false,
+    "comment": "P512 is the deployment-compatible sampler used by the bundled experimental models. It is not presented as a universal or selected sampler winner."
+  }
+}
