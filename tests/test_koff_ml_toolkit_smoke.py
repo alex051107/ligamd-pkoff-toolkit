@@ -42,6 +42,12 @@ def test_predict_and_evaluate_public_receipt(tmp_path: Path) -> None:
     static = {name: all_values[name] for name in profile["input_feature_order"][:20]}
     dynamic = {name: all_values[name] for name in profile["input_feature_order"][20:]}
     features_path = tmp_path / "features.json"
+    endpoint_contract = json.loads(
+        bundled_path("contracts/endpoint_v2.json").read_text(encoding="utf-8")
+    )
+    sampler_contract = json.loads(
+        bundled_path("contracts/p512_sampler_v1.json").read_text(encoding="utf-8")
+    )
     features_path.write_text(
         json.dumps(
             {
@@ -51,6 +57,17 @@ def test_predict_and_evaluate_public_receipt(tmp_path: Path) -> None:
                 "condition_id": "synthetic-condition",
                 "protein_target": profile["training_protein_targets"][0],
                 "saved_frame_interval_ps": 1.0,
+                "endpoint_spec": {
+                    "name": endpoint_contract["contract_id"],
+                    "displacement_field": endpoint_contract["frame_conditions_all_required"][0]["dense_trace_column"],
+                    "displacement_min_A": endpoint_contract["frame_conditions_all_required"][0]["threshold_A"],
+                    "whole_protein_min_distance_strictly_greater_A": endpoint_contract["frame_conditions_all_required"][1]["threshold_A"],
+                    "persistence_frames": endpoint_contract["persistence"]["consecutive_saved_frames"],
+                },
+                "p512_sampler_contract_id": sampler_contract["contract_id"],
+                "p512_sampler_settings": sampler_contract["samplers"],
+                "replica_pooling": "arithmetic_mean_of_exactly_three_endpoint_PASS_replicas",
+                "replica_count": 3,
                 "static20": static,
                 "combined30": {**static, **dynamic},
             }
@@ -88,6 +105,29 @@ def test_predict_and_evaluate_public_receipt(tmp_path: Path) -> None:
     ]) == 0
     static_prediction = json.loads(static_prediction_path.read_text(encoding="utf-8"))
     assert static_prediction["prediction_scope"] == "WITHIN_OBSERVED_SCOPE"
+
+    drifted = json.loads(features_path.read_text(encoding="utf-8"))
+    drifted["endpoint_spec"]["displacement_min_A"] = 17.0
+    features_path.write_text(json.dumps(drifted), encoding="utf-8")
+    incompatible_prediction = tmp_path / "incompatible_prediction.json"
+    assert toolkit.main([
+        "predict", "--features", str(features_path),
+        "--model-id", "combined30_p512_ridge",
+        "--output", str(incompatible_prediction),
+    ]) == 0
+    incompatible = json.loads(incompatible_prediction.read_text(encoding="utf-8"))
+    assert incompatible["prediction_scope"] == "OUT_OF_SCOPE_NO_PREDICTION"
+    assert incompatible["predicted_experimental_pKoff"] is None
+    assert "bundled endpoint-v2" in incompatible["scope_reasons"][0]
+
+    static_after_drift = tmp_path / "static_after_drift.json"
+    assert toolkit.main([
+        "predict", "--features", str(features_path),
+        "--model-id", "static20_ridge", "--output", str(static_after_drift),
+    ]) == 0
+    assert json.loads(static_after_drift.read_text(encoding="utf-8"))[
+        "prediction_scope"
+    ] == "WITHIN_OBSERVED_SCOPE"
 
 
 def test_endpoint_contract_controls_the_public_runtime_predicate(tmp_path: Path) -> None:
@@ -201,6 +241,8 @@ def test_featurize_runs_full_three_replica_coordinate_path_with_synthetic_raw_in
     assert features["status"] == "PASS_FEATURES_READY_FOR_EXPERIMENTAL_PREDICTION"
     assert features["replica_count"] == 3
     assert features["saved_frame_interval_ps"] == 1.0
+    assert features["endpoint_spec"]["displacement_min_A"] == 15.0
+    assert features["p512_sampler_contract_id"] == "P512_MULTIBLOCK_PATH_ARCLENGTH_512_REAL_FRAMES"
     assert len(features["static20"]) == 20
     assert len(features["dynamic10"]) == 10
     events = pd.read_csv(output / "replica_events.tsv", sep="\t")

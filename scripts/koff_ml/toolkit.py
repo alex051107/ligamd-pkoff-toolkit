@@ -526,8 +526,11 @@ def featurize(
         "endpoint_contract": str(endpoint_contract.resolve()),
         "p512_sampler_contract": str(sampler_contract.resolve()),
         "endpoint_rule": contract["contract_id"],
+        "endpoint_spec": asdict(endpoint_spec_from_contract(contract)),
         "sampler": "P512_multiblock_path_arclength",
         "sampler_budget": 512,
+        "p512_sampler_contract_id": protocol["contract_id"],
+        "p512_sampler_settings": protocol["samplers"],
         "replica_pooling": "arithmetic_mean_of_exactly_three_endpoint_PASS_replicas",
         "replica_count": 3,
         "static20": static20,
@@ -617,6 +620,28 @@ def _prediction_feature_map(payload: Mapping[str, Any], profile: Mapping[str, An
     block = str(profile["feature_block"])
     if payload.get("status") != "PASS_FEATURES_READY_FOR_EXPERIMENTAL_PREDICTION":
         raise ToolkitError("feature payload is not endpoint-v2 PASS with exactly three replica vectors")
+    if block == "Combined30":
+        expected_endpoint = asdict(
+            endpoint_spec_from_contract(_contract(DEFAULT_ENDPOINT_CONTRACT))
+        )
+        expected_sampler = _p512_sampler_contract(DEFAULT_P512_SAMPLER_CONTRACT)
+        require(
+            payload.get("endpoint_spec") == expected_endpoint,
+            "Combined30 requires the bundled endpoint-v2 executable specification",
+        )
+        require(
+            payload.get("p512_sampler_contract_id")
+            == expected_sampler["contract_id"]
+            and payload.get("p512_sampler_settings")
+            == expected_sampler["samplers"],
+            "Combined30 requires the bundled P512 executable specification",
+        )
+        require(
+            payload.get("replica_pooling")
+            == "arithmetic_mean_of_exactly_three_endpoint_PASS_replicas"
+            and payload.get("replica_count") == 3,
+            "Combined30 requires arithmetic pooling of exactly three endpoint-PASS replicas",
+        )
     value = payload.get("static20") if block == "Static20" else payload.get("combined30")
     require(isinstance(value, Mapping), f"feature payload lacks {block} values")
     return value

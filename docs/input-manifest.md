@@ -121,4 +121,10 @@ limitation visible as an applicability caution for Dynamic10 profiles.
 | `trajectory_status.tsv` | `FAIL_NO_PERSISTENCE_CONFIRMED_COMPLETE_EXIT` | The replica did not contain the required consecutive run. It cannot contribute to a combined prediction. |
 | `features.json` | `PASS_FEATURES_READY_FOR_EXPERIMENTAL_PREDICTION` | All three replicas passed, 512 real frames were selected per replica, and Current30 was written. This is feature readiness, not model validation. |
 | `features.json` | `OUT_OF_SCOPE_NO_PREDICTION` | At least one required replica failed or required feature preparation could not complete. The code records the reason and does not make a partial prediction. |
+
+The successful receipt contains the parsed endpoint and P512 executable
+settings, not only their file paths. A bundled Combined30 model accepts the
+dynamic vector only when those settings and exact-three-replica pooling match
+the frozen training route. A Static20 model does not impose this trajectory
+contract because its inputs do not use the trajectory-derived block.
 | command error | invalid schema, missing file, ambiguous ligand, unsupported box, or atom/topology mismatch | The command stops before it creates a scientifically ambiguous feature vector. Correct the input rather than changing the result by hand. |

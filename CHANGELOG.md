@@ -11,6 +11,9 @@
   focused PBC/shape check, and first-reader decision note.
 - Made raw-input reuse fail closed on duplicate trajectory paths and canonical
   PDB/topology atom-order drift, while normalizing explicitly blank PDB chains.
+- Bound Combined30 inference to the bundled endpoint-v2, P512, and exact-three
+  pooling semantics recorded in the feature receipt; Static20 remains usable
+  independently of the trajectory contract.
 
 ## 0.1.0, 2026-08-12
 
