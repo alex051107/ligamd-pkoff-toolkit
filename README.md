@@ -6,7 +6,9 @@ production campaign to two different kinds of output.
 The first output is a set of trajectory measurements. The toolkit reads three
 replicas, identifies a geometry-defined complete-exit episode, selects 512
 real saved frames from each replica, and turns those frames into 20 static and
-10 dynamic features.
+10 dynamic features. An opt-in engineering route can reuse those same selected
+coordinates to calculate a separate 32-field chemically typed interaction
+challenger. It is not part of Current30 or any bundled predictor.
 
 The second output is optional. Four bundled regression pipelines can turn a
 feature vector into a **predicted experimental pKoff**. That target is an
@@ -25,6 +27,7 @@ you read a lesson before you can work.
 | “How do I prepare my own three production replicas?” | How-to guide | [Prepare a real LiGaMD input set](docs/prepare-real-inputs.md). It assumes you already know your simulation and leads to one manifest and one `featurize` command. |
 | “What does this field, status, unit, or input path mean?” | Reference | [Input-manifest reference](docs/input-manifest.md), [feature reference](docs/feature-definitions.md), and [model card](MODEL_CARD.md). |
 | “Why does the workflow use this episode boundary, sampler, grouping, or evidence rule?” | Explanation | [Episode and sampler explanation](docs/endpoint-and-sampler.md), [method evidence ledger](docs/method-evidence.md), and [model-development roadmap](docs/model-development-roadmap.md). |
+| “How do I freeze and evaluate a genuinely new ligand-group panel?” | Research protocol | [Prospective Dynamic10 validation protocol](docs/prospective-validation-protocol.md). It keeps identity auditing and predictions separate from later label attachment. |
 
 The [code map](docs/code-map.md) is for readers who want to trace a documented
 operation into the public source code.
@@ -39,6 +42,7 @@ canonical bound PDB + topology + three production NetCDF files
     -> select 512 unique real P512 frames from each replica
     -> calculate Static20 and Dynamic10
     -> average the three Dynamic10 vectors
+    -> optionally calculate a separate CORE8 typed-interaction challenger
     -> optionally apply a frozen experimental-pKoff model
 ```
 
@@ -56,6 +60,13 @@ cd ligamd-pkoff-toolkit
 conda env create -f environment.yml
 conda activate ligamd-pkoff-toolkit
 python -m pip install --no-build-isolation .
+```
+
+The default installation and workflow do not require the typed-interaction
+dependencies. To enable that optional engineering route, install the extra:
+
+```bash
+python -m pip install --no-build-isolation ".[typed]"
 ```
 
 The command line entry point is then available as `ligamd-pkoff`. The endpoint
@@ -123,6 +134,27 @@ does not replace a missing replica with a partial average.
 
 The synthetic target name is not part of the N31 training panel, so a bundled
 model will correctly issue an applicability warning if you try to predict it.
+
+## Optionally calculate the typed-interaction challenger
+
+If the input manifest supplies an authoritative ligand SDF, the same
+`featurize` command can calculate the frozen CORE8 interaction classes from
+the already selected P512 coordinate union:
+
+```bash
+ligamd-pkoff featurize \
+  --manifest /path/to/manifest.json \
+  --output-dir /path/to/features-with-typed \
+  --typed-interactions
+```
+
+This adds replica-level `typed_interactions.json` receipts and pooled
+`typed_interactions.json`/`.tsv` artifacts.
+The 32 values describe eight named interaction classes over four normalized
+episode stages. Their status is `ENGINEERING_CHALLENGER_NOT_SELECTED`; they do
+not enter `combined30`, `system_features.tsv`, the model registry, or a
+prediction. See the [typed-interaction decision note](docs/typed-interaction-challenger.md)
+for the exact boundary.
 
 ## Apply one experimental baseline
 
@@ -202,7 +234,7 @@ aggregate-only. See [DATA_NOTICE.md](DATA_NOTICE.md) for the exact boundary.
 
 | Location | Use it when you need to |
 | --- | --- |
-| `ligamd_pkoff/resources/contracts/` | inspect the exact endpoint-v2 and P512 rules shipped with every install |
+| `ligamd_pkoff/resources/contracts/` | inspect the endpoint-v2, P512, and optional typed-interaction rules shipped with every install |
 | `scripts/koff_ml/toolkit.py` | run the public feature, prediction, and evaluation commands |
 | `scripts/koff_ml/` | inspect the molecular measurements and model utilities |
 | `ligamd_pkoff/resources/models/experimental_n31_registry_v1/` | inspect the four bundled models and their aggregate evidence |

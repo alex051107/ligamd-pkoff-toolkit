@@ -32,6 +32,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+typed = ["MDAnalysis>=2.9,<3", "ProLIF==2.2.0"]
 
 [project.scripts]
 ligamd-pkoff = "ligamd_pkoff.cli:main"

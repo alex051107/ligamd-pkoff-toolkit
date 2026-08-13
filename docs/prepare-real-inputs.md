@@ -32,8 +32,9 @@ my-system/
 ```
 
 The three trajectories must be independent production replicas of the same
-condition. They must use one saved-frame cadence because the one manifest
-cadence applies to all three persistence checks.
+condition and must resolve to three different files. They must use one
+saved-frame cadence because the one manifest cadence applies to all three
+persistence checks.
 
 ## 2. Choose the canonical bound reference before inspecting outcomes
 
@@ -45,6 +46,10 @@ Use `ligand.resname`, `ligand.resid`, and `ligand.chain` to identify exactly
 one ligand residue in the canonical PDB. Supply `resid` and `chain` whenever a
 residue name alone could match more than one molecule. The command stops on an
 ambiguous selector rather than picking one arbitrarily.
+
+For a PDB whose chain column is blank, either omit `ligand.chain` when the
+remaining selector is unique or set it to an empty string. The manifest reader
+normalizes an explicitly blank chain to the PDB reader's `_` representation.
 
 Before running the command, independently check that the SMILES or SDF used
 for ligand descriptors represents the same chemical entity as the selected

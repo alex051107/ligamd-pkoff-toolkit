@@ -75,7 +75,9 @@ Each object in `replicas` has these fields.
 | `pdb` | existing PDB path | yes | Atom identity and order for the trajectory. It must be compatible with the topology and frozen shared reference. |
 | `topology` | existing topology path | yes | Topology for this replica. It is checked against the frozen reference so that coordinate positions do not silently acquire a different atom meaning. |
 
-`replica_id` values must be distinct, and there must be exactly three entries.
+`replica_id` values and resolved trajectory paths must be distinct, and there
+must be exactly three entries. Reusing one trajectory under multiple replica
+names fails before feature extraction.
 The bundled Combined30 profiles pool one Dynamic10 vector from each of exactly
 three endpoint-passing replicas. The command never converts two passing
 replicas into a three-replica average.
@@ -98,8 +100,10 @@ length, otherwise a minimum-image pocket selection would be ambiguous.
 The manifest has two different identity jobs.
 
 1. The canonical PDB and canonical topology define the atom identities used to
-   create a shared structural reference. Every replica is checked against that
-   reference before its geometry is used.
+   create a shared structural reference. Their ordered atom/residue mapping is
+   checked once. Every replica then has to preserve the canonical PDB atom
+   schema and topology identity, and its NetCDF atom count must match before
+   geometry is used.
 2. The ligand SMILES or SDF defines the small-molecule graph used for Static10.
    It must be audited by the user against the structural ligand selector.
 
@@ -117,4 +121,10 @@ limitation visible as an applicability caution for Dynamic10 profiles.
 | `trajectory_status.tsv` | `FAIL_NO_PERSISTENCE_CONFIRMED_COMPLETE_EXIT` | The replica did not contain the required consecutive run. It cannot contribute to a combined prediction. |
 | `features.json` | `PASS_FEATURES_READY_FOR_EXPERIMENTAL_PREDICTION` | All three replicas passed, 512 real frames were selected per replica, and Current30 was written. This is feature readiness, not model validation. |
 | `features.json` | `OUT_OF_SCOPE_NO_PREDICTION` | At least one required replica failed or required feature preparation could not complete. The code records the reason and does not make a partial prediction. |
+
+The successful receipt contains the parsed endpoint and P512 executable
+settings, not only their file paths. A bundled Combined30 model accepts the
+dynamic vector only when those settings and exact-three-replica pooling match
+the frozen training route. A Static20 model does not impose this trajectory
+contract because its inputs do not use the trajectory-derived block.
 | command error | invalid schema, missing file, ambiguous ligand, unsupported box, or atom/topology mismatch | The command stops before it creates a scientifically ambiguous feature vector. Correct the input rather than changing the result by hand. |

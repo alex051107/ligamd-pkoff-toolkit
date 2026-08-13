@@ -60,6 +60,9 @@ from scripts.koff_ml.p512_sampler import load_p512_trace, p512_path_arclength_in
 from scripts.koff_ml.prediction_first_coordinate_features import (
     derive_coordinate_features,
 )
+from scripts.koff_ml.prediction_first_coordinate_materialization import (
+    _validate_saved_atom_mapping,
+)
 from scripts.koff_ml.prediction_first_geometric_contact_v2 import (
     G50_TOTAL_CORE41_V2_FEATURE_NAMES,
     summarize_geometric_contact_replica_v2,
@@ -72,6 +75,12 @@ from scripts.koff_ml.shared_reference import (
     parse_pdb_bytes,
     write_shared_reference,
 )
+from scripts.koff_ml.typed_interactions import (
+    CONTRACT_ID as TYPED_INTERACTION_CONTRACT_ID,
+    STATUS as TYPED_INTERACTION_STATUS,
+    TypedInteractionError,
+    extract_p512_typed_interactions,
+)
 
 
 SCHEMA_VERSION = "ligamd_pkoff_toolkit_v1.0"
@@ -82,6 +91,9 @@ ENDPOINT_CONTRACT_SCHEMA = "ligamd_endpoint_contract_v2.0"
 P512_SAMPLER_CONTRACT_SCHEMA = "ligamd_p512_sampler_contract_v1.0"
 DEFAULT_ENDPOINT_CONTRACT = bundled_path("contracts/endpoint_v2.json")
 DEFAULT_P512_SAMPLER_CONTRACT = bundled_path("contracts/p512_sampler_v1.json")
+DEFAULT_TYPED_INTERACTION_CONTRACT = bundled_path(
+    "contracts/typed_interactions_core8_v1.json"
+)
 DEFAULT_MODEL_REGISTRY = bundled_path(
     "models/experimental_n31_registry_v1/model_registry.json"
 )
@@ -137,6 +149,13 @@ def _read_manifest(path: Path) -> tuple[Mapping[str, Any], dict[str, Any]]:
     require(isinstance(ligand, Mapping), "manifest ligand must be an object")
     require(isinstance(ligand.get("resname"), str) and ligand["resname"].strip(), "ligand.resname is required")
     require(bool(ligand.get("smiles") or ligand.get("sdf")), "ligand requires either audited SMILES or an SDF path")
+    resolved_ligand = dict(ligand)
+    ligand_chain = resolved_ligand.get("chain")
+    if ligand_chain is not None:
+        require(isinstance(ligand_chain, str), "ligand.chain must be a string when supplied")
+        # PDB readers represent a blank chain as ``_``.  Omission means no
+        # chain filter; an explicitly blank chain means the blank PDB chain.
+        resolved_ligand["chain"] = ligand_chain.strip() or "_"
     replicas = raw["replicas"]
     require(isinstance(replicas, list) and len(replicas) == 3, "manifest requires exactly three replicas")
     ids: list[str] = []
@@ -153,6 +172,11 @@ def _read_manifest(path: Path) -> tuple[Mapping[str, Any], dict[str, Any]]:
             "topology": _resolve(path, item.get("topology"), f"replica[{replica_id}].topology"),
         })
     require(len(ids) == len(set(ids)), "replica_id values must be unique")
+    trajectories = [item["trajectory"] for item in resolved_replicas]
+    require(
+        len(trajectories) == len(set(trajectories)),
+        "replica trajectory paths must be distinct",
+    )
     resolved = {
         "system_id": str(raw["system_id"]),
         "condition_id": str(raw["condition_id"]),
@@ -160,7 +184,7 @@ def _read_manifest(path: Path) -> tuple[Mapping[str, Any], dict[str, Any]]:
         "saved_frame_interval_ps": float(raw.get("saved_frame_interval_ps", 1.0)),
         "canonical_bound_pdb": _resolve(path, raw["canonical_bound_pdb"], "canonical_bound_pdb"),
         "canonical_topology": _resolve(path, raw["canonical_topology"], "canonical_topology"),
-        "ligand": dict(ligand),
+        "ligand": resolved_ligand,
         "replicas": resolved_replicas,
     }
     require(math.isfinite(resolved["saved_frame_interval_ps"]) and resolved["saved_frame_interval_ps"] > 0, "saved_frame_interval_ps must be finite and positive")
@@ -319,13 +343,29 @@ def featurize(
     output_dir: Path,
     endpoint_contract: Path = DEFAULT_ENDPOINT_CONTRACT,
     sampler_contract: Path = DEFAULT_P512_SAMPLER_CONTRACT,
+    *,
+    typed_interactions: bool = False,
 ) -> dict[str, Any]:
-    """Produce one status receipt and, when admissible, one Current30 feature JSON."""
+    """Produce Current30 and, when requested, an unselected typed challenger."""
 
     require(not output_dir.exists(), f"refusing to overwrite feature output: {output_dir}")
     raw_manifest, manifest = _read_manifest(manifest_path)
+    if typed_interactions:
+        require(
+            manifest["ligand"].get("sdf_path") is not None,
+            "--typed-interactions requires ligand.sdf in the input manifest",
+        )
     contract = _contract(endpoint_contract)
     output_dir.mkdir(parents=True, exist_ok=False)
+    canonical_atoms = parse_pdb_atoms(manifest["canonical_bound_pdb"])
+    try:
+        saved_atom_mapping_sha256 = _validate_saved_atom_mapping(
+            manifest["canonical_bound_pdb"],
+            manifest["canonical_topology"],
+            len(canonical_atoms),
+        )
+    except ValueError as exc:
+        raise ToolkitError(f"canonical PDB/topology atom mapping failed: {exc}") from exc
     write_json(output_dir / "input_manifest_receipt.json", {
         "schema_version": SCHEMA_VERSION,
         "manifest_schema": raw_manifest["schema_version"],
@@ -333,6 +373,7 @@ def featurize(
         "system_id": manifest["system_id"],
         "condition_id": manifest["condition_id"],
         "replica_ids": [item["replica_id"] for item in manifest["replicas"]],
+        "canonical_saved_atom_mapping_sha256": saved_atom_mapping_sha256,
     })
     shared_path = output_dir / "shared_reference.json"
     shared = build_shared_reference_manifest(
@@ -349,6 +390,7 @@ def featurize(
     protocol = _p512_sampler_contract(sampler_contract)
     replica_rows: list[dict[str, Any]] = []
     replicate_dynamic: list[dict[str, float]] = []
+    replicate_typed: list[dict[str, float]] = []
     failures: list[str] = []
     for replica in manifest["replicas"]:
         replica_id = replica["replica_id"]
@@ -406,12 +448,42 @@ def featurize(
             pdb_path=replica["pdb"], shared_reference=shared,
         )
         replicate_dynamic.append(dynamic10)
+        typed_result: Mapping[str, Any] | None = None
+        if typed_interactions:
+            try:
+                typed_result = extract_p512_typed_interactions(
+                    coordinate_union_npz=union_npz,
+                    selected_indices0=indices,
+                    episode_onset_index0=onset,
+                    topology_path=replica["topology"],
+                    pdb_path=replica["pdb"],
+                    ligand_template_sdf=manifest["ligand"]["sdf_path"],
+                    ligand_resname=str(manifest["ligand"]["resname"]),
+                    contract_path=DEFAULT_TYPED_INTERACTION_CONTRACT,
+                    system_id=manifest["system_id"],
+                    replica_id=replica_id,
+                    output_json=replica_dir / "typed_interactions.json",
+                )
+            except TypedInteractionError as exc:
+                raise ToolkitError(f"{replica_id}: typed interactions failed: {exc}") from exc
+            typed_values = typed_result.get("features")
+            require(
+                isinstance(typed_values, Mapping) and len(typed_values) == 32,
+                f"{replica_id}: typed extractor did not return 32 features",
+            )
+            replicate_typed.append(
+                {name: float(value) for name, value in typed_values.items()}
+            )
         row.update({
             "p512_selected_frames": str(selection.relative_to(output_dir)),
             "p512_coordinate_union": str(union_npz.relative_to(output_dir)),
             "dynamic10": dynamic10,
             "core41_audit_only": core41,
         })
+        if typed_result is not None:
+            row["typed_interactions"] = str(
+                (replica_dir / "typed_interactions.json").relative_to(output_dir)
+            )
     events = pd.DataFrame(replica_rows)
     events.to_csv(output_dir / "replica_events.tsv", sep="\t", index=False, lineterminator="\n")
     status_columns = [
@@ -454,8 +526,11 @@ def featurize(
         "endpoint_contract": str(endpoint_contract.resolve()),
         "p512_sampler_contract": str(sampler_contract.resolve()),
         "endpoint_rule": contract["contract_id"],
+        "endpoint_spec": asdict(endpoint_spec_from_contract(contract)),
         "sampler": "P512_multiblock_path_arclength",
         "sampler_budget": 512,
+        "p512_sampler_contract_id": protocol["contract_id"],
+        "p512_sampler_settings": protocol["samplers"],
         "replica_pooling": "arithmetic_mean_of_exactly_three_endpoint_PASS_replicas",
         "replica_count": 3,
         "static20": static20,
@@ -470,6 +545,63 @@ def featurize(
             "representation_selected": False,
         },
     }
+    if typed_interactions:
+        require(
+            len(replicate_typed) == 3,
+            "typed interactions require exactly three endpoint-PASS replica vectors",
+        )
+        typed_names = tuple(replicate_typed[0])
+        require(
+            len(typed_names) == 32
+            and all(tuple(values) == typed_names for values in replicate_typed),
+            "typed interaction feature order differs across replicas",
+        )
+        typed_matrix = np.asarray(
+            [[values[name] for name in typed_names] for values in replicate_typed],
+            dtype=float,
+        )
+        pooled_typed = {
+            name: float(value)
+            for name, value in zip(
+                typed_names, np.mean(typed_matrix, axis=0), strict=True
+            )
+        }
+        typed_payload = {
+            "schema_version": "ligamd_typed_interactions_system_v1.0",
+            "contract_id": TYPED_INTERACTION_CONTRACT_ID,
+            "status": TYPED_INTERACTION_STATUS,
+            "system_id": manifest["system_id"],
+            "representation": "GLOBAL_TYPED_FRACTION_STAGE",
+            "sampler": "P512_multiblock_path_arclength",
+            "replica_pooling": (
+                "arithmetic_mean_of_exactly_three_endpoint_PASS_replicas"
+            ),
+            "replica_count": 3,
+            "features": pooled_typed,
+            "scientific_boundaries": {
+                "experimental_pkoff_read": False,
+                "representation_selected": False,
+                "model_selected": False,
+                "physical_koff_estimated": False,
+            },
+        }
+        write_json(output_dir / "typed_interactions.json", typed_payload)
+        pd.DataFrame(
+            [{"system_id": manifest["system_id"], **pooled_typed}]
+        ).to_csv(
+            output_dir / "typed_interactions.tsv",
+            sep="\t",
+            index=False,
+            lineterminator="\n",
+        )
+        feature_payload["typed_interactions"] = {
+            "contract_id": TYPED_INTERACTION_CONTRACT_ID,
+            "status": TYPED_INTERACTION_STATUS,
+            "representation": "GLOBAL_TYPED_FRACTION_STAGE",
+            "selected_for_prediction": False,
+            "features": pooled_typed,
+            "artifact": "typed_interactions.json",
+        }
     write_json(output_dir / "features.json", feature_payload)
     pd.DataFrame([
         {
@@ -488,6 +620,28 @@ def _prediction_feature_map(payload: Mapping[str, Any], profile: Mapping[str, An
     block = str(profile["feature_block"])
     if payload.get("status") != "PASS_FEATURES_READY_FOR_EXPERIMENTAL_PREDICTION":
         raise ToolkitError("feature payload is not endpoint-v2 PASS with exactly three replica vectors")
+    if block == "Combined30":
+        expected_endpoint = asdict(
+            endpoint_spec_from_contract(_contract(DEFAULT_ENDPOINT_CONTRACT))
+        )
+        expected_sampler = _p512_sampler_contract(DEFAULT_P512_SAMPLER_CONTRACT)
+        require(
+            payload.get("endpoint_spec") == expected_endpoint,
+            "Combined30 requires the bundled endpoint-v2 executable specification",
+        )
+        require(
+            payload.get("p512_sampler_contract_id")
+            == expected_sampler["contract_id"]
+            and payload.get("p512_sampler_settings")
+            == expected_sampler["samplers"],
+            "Combined30 requires the bundled P512 executable specification",
+        )
+        require(
+            payload.get("replica_pooling")
+            == "arithmetic_mean_of_exactly_three_endpoint_PASS_replicas"
+            and payload.get("replica_count") == 3,
+            "Combined30 requires arithmetic pooling of exactly three endpoint-PASS replicas",
+        )
     value = payload.get("static20") if block == "Static20" else payload.get("combined30")
     require(isinstance(value, Mapping), f"feature payload lacks {block} values")
     return value
@@ -618,6 +772,14 @@ def _parser() -> argparse.ArgumentParser:
     featurize_parser.add_argument("--output-dir", type=Path, required=True)
     featurize_parser.add_argument("--endpoint-contract", type=Path, default=DEFAULT_ENDPOINT_CONTRACT)
     featurize_parser.add_argument("--sampler-contract", type=Path, default=DEFAULT_P512_SAMPLER_CONTRACT)
+    featurize_parser.add_argument(
+        "--typed-interactions",
+        action="store_true",
+        help=(
+            "also calculate the unselected CORE8 GLOBAL_TYPED_FRACTION_STAGE "
+            "challenger from the existing P512 union"
+        ),
+    )
     predict_parser = commands.add_parser("predict", help="apply one experimental registry profile")
     predict_parser.add_argument("--features", type=Path, required=True)
     predict_parser.add_argument("--registry", type=Path, default=DEFAULT_MODEL_REGISTRY)
@@ -634,7 +796,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         if args.command == "featurize":
-            result = featurize(args.manifest, args.output_dir, args.endpoint_contract, args.sampler_contract)
+            result = featurize(
+                args.manifest,
+                args.output_dir,
+                args.endpoint_contract,
+                args.sampler_contract,
+                typed_interactions=args.typed_interactions,
+            )
         elif args.command == "predict":
             result = predict(features_path=args.features, registry_path=args.registry, model_id=args.model_id, output_path=args.output)
         else:

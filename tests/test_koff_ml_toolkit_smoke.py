@@ -14,11 +14,14 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from scipy.io import netcdf_file
 
+from examples.make_synthetic_three_replica_campaign import _write_minimal_parm7
 from ligamd_pkoff.resources import bundled_path
 from scripts.koff_ml import toolkit
 from scripts.koff_ml.complete_static_geometric import LIGAND_FEATURES
+from scripts.koff_ml.typed_interactions import feature_names
 
 
 REGISTRY = bundled_path("models/experimental_n31_registry_v1/model_registry.json")
@@ -39,6 +42,12 @@ def test_predict_and_evaluate_public_receipt(tmp_path: Path) -> None:
     static = {name: all_values[name] for name in profile["input_feature_order"][:20]}
     dynamic = {name: all_values[name] for name in profile["input_feature_order"][20:]}
     features_path = tmp_path / "features.json"
+    endpoint_contract = json.loads(
+        bundled_path("contracts/endpoint_v2.json").read_text(encoding="utf-8")
+    )
+    sampler_contract = json.loads(
+        bundled_path("contracts/p512_sampler_v1.json").read_text(encoding="utf-8")
+    )
     features_path.write_text(
         json.dumps(
             {
@@ -48,6 +57,17 @@ def test_predict_and_evaluate_public_receipt(tmp_path: Path) -> None:
                 "condition_id": "synthetic-condition",
                 "protein_target": profile["training_protein_targets"][0],
                 "saved_frame_interval_ps": 1.0,
+                "endpoint_spec": {
+                    "name": endpoint_contract["contract_id"],
+                    "displacement_field": endpoint_contract["frame_conditions_all_required"][0]["dense_trace_column"],
+                    "displacement_min_A": endpoint_contract["frame_conditions_all_required"][0]["threshold_A"],
+                    "whole_protein_min_distance_strictly_greater_A": endpoint_contract["frame_conditions_all_required"][1]["threshold_A"],
+                    "persistence_frames": endpoint_contract["persistence"]["consecutive_saved_frames"],
+                },
+                "p512_sampler_contract_id": sampler_contract["contract_id"],
+                "p512_sampler_settings": sampler_contract["samplers"],
+                "replica_pooling": "arithmetic_mean_of_exactly_three_endpoint_PASS_replicas",
+                "replica_count": 3,
                 "static20": static,
                 "combined30": {**static, **dynamic},
             }
@@ -85,6 +105,29 @@ def test_predict_and_evaluate_public_receipt(tmp_path: Path) -> None:
     ]) == 0
     static_prediction = json.loads(static_prediction_path.read_text(encoding="utf-8"))
     assert static_prediction["prediction_scope"] == "WITHIN_OBSERVED_SCOPE"
+
+    drifted = json.loads(features_path.read_text(encoding="utf-8"))
+    drifted["endpoint_spec"]["displacement_min_A"] = 17.0
+    features_path.write_text(json.dumps(drifted), encoding="utf-8")
+    incompatible_prediction = tmp_path / "incompatible_prediction.json"
+    assert toolkit.main([
+        "predict", "--features", str(features_path),
+        "--model-id", "combined30_p512_ridge",
+        "--output", str(incompatible_prediction),
+    ]) == 0
+    incompatible = json.loads(incompatible_prediction.read_text(encoding="utf-8"))
+    assert incompatible["prediction_scope"] == "OUT_OF_SCOPE_NO_PREDICTION"
+    assert incompatible["predicted_experimental_pKoff"] is None
+    assert "bundled endpoint-v2" in incompatible["scope_reasons"][0]
+
+    static_after_drift = tmp_path / "static_after_drift.json"
+    assert toolkit.main([
+        "predict", "--features", str(features_path),
+        "--model-id", "static20_ridge", "--output", str(static_after_drift),
+    ]) == 0
+    assert json.loads(static_after_drift.read_text(encoding="utf-8"))[
+        "prediction_scope"
+    ] == "WITHIN_OBSERVED_SCOPE"
 
 
 def test_endpoint_contract_controls_the_public_runtime_predicate(tmp_path: Path) -> None:
@@ -135,7 +178,7 @@ def _write_minimal_raw_fixture(root: Path) -> Path:
         encoding="utf-8",
     )
     topology = root / "canonical.parm7"
-    topology.write_text("synthetic topology identity only\n", encoding="utf-8")
+    _write_minimal_parm7(topology)
     frames = 620
     coordinates = np.zeros((frames, 5, 3), dtype=np.float32)
     coordinates[:, 0] = (0.0, 0.0, 0.0)
@@ -198,6 +241,8 @@ def test_featurize_runs_full_three_replica_coordinate_path_with_synthetic_raw_in
     assert features["status"] == "PASS_FEATURES_READY_FOR_EXPERIMENTAL_PREDICTION"
     assert features["replica_count"] == 3
     assert features["saved_frame_interval_ps"] == 1.0
+    assert features["endpoint_spec"]["displacement_min_A"] == 15.0
+    assert features["p512_sampler_contract_id"] == "P512_MULTIBLOCK_PATH_ARCLENGTH_512_REAL_FRAMES"
     assert len(features["static20"]) == 20
     assert len(features["dynamic10"]) == 10
     events = pd.read_csv(output / "replica_events.tsv", sep="\t")
@@ -208,3 +253,97 @@ def test_featurize_runs_full_three_replica_coordinate_path_with_synthetic_raw_in
     system_features = pd.read_csv(output / "system_features.tsv", sep="\t")
     assert len(system_features) == 1
     assert len(system_features.columns) == 34
+    input_receipt = json.loads(
+        (output / "input_manifest_receipt.json").read_text(encoding="utf-8")
+    )
+    assert len(input_receipt["canonical_saved_atom_mapping_sha256"]) == 64
+
+
+def test_manifest_normalizes_blank_chain_and_rejects_duplicate_trajectory(tmp_path: Path) -> None:
+    manifest = _write_minimal_raw_fixture(tmp_path)
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["ligand"]["chain"] = ""
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    _, resolved = toolkit._read_manifest(manifest)
+    assert resolved["ligand"]["chain"] == "_"
+
+    payload["replicas"][1]["trajectory"] = payload["replicas"][0]["trajectory"]
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(toolkit.ToolkitError, match="trajectory paths must be distinct"):
+        toolkit._read_manifest(manifest)
+
+
+def test_featurize_rejects_canonical_pdb_topology_atom_drift(tmp_path: Path) -> None:
+    manifest = _write_minimal_raw_fixture(tmp_path)
+    topology = tmp_path / "canonical.parm7"
+    topology.write_text(
+        topology.read_text(encoding="utf-8").replace("C1  ", "X1  ", 1),
+        encoding="utf-8",
+    )
+    output = tmp_path / "features-mapping-fail"
+    assert toolkit.main([
+        "featurize", "--manifest", str(manifest), "--output-dir", str(output),
+    ]) == 2
+    failure = json.loads((output / "features.json").read_text(encoding="utf-8"))
+    assert failure["status"] == "OUT_OF_SCOPE_NO_PREDICTION"
+    assert "atom-order mismatch" in failure["reason"]
+
+
+def test_typed_opt_in_reuses_p512_and_stays_out_of_combined30(tmp_path: Path, monkeypatch) -> None:
+    manifest = _write_minimal_raw_fixture(tmp_path)
+    manifest_payload = json.loads(manifest.read_text(encoding="utf-8"))
+    (tmp_path / "ligand.sdf").write_text("synthetic typed template\n", encoding="utf-8")
+    manifest_payload["ligand"]["sdf"] = "ligand.sdf"
+    manifest.write_text(json.dumps(manifest_payload), encoding="utf-8")
+    monkeypatch.setattr(
+        toolkit,
+        "_compute_static10",
+        lambda ligand: {
+            name: float(index + 1)
+            for index, name in enumerate(LIGAND_FEATURES)
+        },
+    )
+    order = (
+        "Hydrophobic", "HBAcceptor", "HBDonor", "PiStacking",
+        "Anionic", "Cationic", "CationPi", "PiCation",
+    )
+    names = feature_names(order)
+    calls: list[dict[str, object]] = []
+
+    def fake_typed_extractor(**kwargs: object) -> dict[str, object]:
+        calls.append(kwargs)
+        union = Path(kwargs["coordinate_union_npz"])
+        selected = np.asarray(kwargs["selected_indices0"])
+        output_json = Path(kwargs["output_json"])
+        assert union.is_file()
+        assert len(selected) == len(np.unique(selected)) == 512
+        features = {name: float(index + 1) / 100.0 for index, name in enumerate(names)}
+        result = {
+            "status": "ENGINEERING_CHALLENGER_NOT_SELECTED",
+            "features": features,
+        }
+        output_json.write_text(json.dumps(result), encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(toolkit, "extract_p512_typed_interactions", fake_typed_extractor)
+    output = tmp_path / "features-typed"
+    assert toolkit.main([
+        "featurize", "--manifest", str(manifest), "--output-dir", str(output),
+        "--typed-interactions",
+    ]) == 0
+    assert len(calls) == 3
+    payload = json.loads((output / "features.json").read_text(encoding="utf-8"))
+    assert len(payload["combined30"]) == 30
+    assert len(payload["typed_interactions"]["features"]) == 32
+    assert payload["typed_interactions"]["selected_for_prediction"] is False
+    assert (output / "typed_interactions.json").is_file()
+    assert len(pd.read_csv(output / "typed_interactions.tsv", sep="\t").columns) == 33
+    assert len(pd.read_csv(output / "system_features.tsv", sep="\t").columns) == 34
+    events = pd.read_csv(output / "replica_events.tsv", sep="\t")
+    assert events["typed_interactions"].notna().all()
+
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    profile = registry["profiles"]["combined30_p512_ridge"]
+    prediction_values = toolkit._prediction_feature_map(payload, profile)
+    assert len(prediction_values) == 30
+    assert not set(names) & set(prediction_values)

@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+- Made the developer-only frozen N31 registry builder independent of the
+  optional XGBoost package when it only rebuilds its fixed Ridge and Random
+  Forest profiles.
+- Required that this builder verify an authorised receipt for the source
+  panel, fold map, reused OOF table, endpoint contract, and held-out-fold
+  columns before it writes a new registry.
+- Added an opt-in `--typed-interactions` engineering route that reuses each
+  existing P512 coordinate union to calculate a separate 32-field CORE8
+  interaction challenger.
+- Kept the challenger out of Current30, bundled model inputs, and the model
+  registry; every output is marked `ENGINEERING_CHALLENGER_NOT_SELECTED`.
+- Added a bundled typed-interaction contract, optional dependency group,
+  focused PBC/shape check, and first-reader decision note.
+- Made raw-input reuse fail closed on duplicate trajectory paths and canonical
+  PDB/topology atom-order drift, while normalizing explicitly blank PDB chains.
+- Bound Combined30 inference to the bundled endpoint-v2, P512, and exact-three
+  pooling semantics recorded in the feature receipt; Static20 remains usable
+  independently of the trajectory contract.
+- Added a private-data-safe two-phase prospective protocol that freezes a new
+  exact-ligand cohort and all four bundled predictions before labels, then uses
+  Ridge as the sole primary Static20-versus-Combined30 comparison.
+
 ## 0.1.0, 2026-08-12
 
 First public experimental release.
