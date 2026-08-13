@@ -54,7 +54,11 @@ from .reference_features import (
     parse_pdb_atoms,
 )
 from .shared_reference import load_and_validate_shared_reference
-from .state_labels import STATE_ORDER, operational_state_labels
+from .state_labels import (
+    STATE_ORDER,
+    operational_state_labels,
+    operational_state_labels_from_channels,
+)
 from .trajectory_summary_math import temporal_voronoi_weights
 
 
@@ -445,25 +449,14 @@ def coordinate_state_labels(
     global_min = np.asarray(block.numeric["global__protein_min_heavy_distance_A"])
     global_count = np.asarray(block.numeric["global__protein_contact_residue_count"])
     pocket_count = np.sum(block.pocket_contacts, axis=1)
-    bound = (
-        (distance <= float(criteria["bound_max_pocket_com_A"]))
-        & (native >= float(criteria["bound_min_native_contact_fraction"]))
+    return operational_state_labels_from_channels(
+        pocket_distance_A=distance,
+        native_contact_fraction=native,
+        global_min_distance_A=global_min,
+        global_contact_count=global_count,
+        initial_contact_count=pocket_count,
+        criteria=criteria,
     )
-    pocket_exit = (
-        (distance >= float(criteria["pocket_exit_min_pocket_com_A"]))
-        & (native <= float(criteria["pocket_exit_max_native_contact_fraction"]))
-        & (pocket_count <= float(criteria["pocket_exit_max_initial_contacts"]))
-    )
-    bulk = (
-        pocket_exit
-        & (global_count <= float(criteria["bulk_unbound_max_global_contacts"]))
-        & (global_min >= float(criteria["bulk_unbound_min_global_distance_A"]))
-    )
-    labels = np.full(len(distance), "I", dtype="<U6")
-    labels[pocket_exit] = "P_ONLY"
-    labels[bulk] = "B"
-    labels[bound] = "A"
-    return labels
 
 
 def _linear_reconstruction(values: np.ndarray, indices: np.ndarray, n_frames: int) -> np.ndarray:
