@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Made the developer-only frozen N31 registry builder independent of the
+  optional XGBoost package when it only rebuilds its fixed Ridge and Random
+  Forest profiles.
+- Required that this builder verify an authorised receipt for the source
+  panel, fold map, reused OOF table, endpoint contract, and held-out-fold
+  columns before it writes a new registry.
 - Added an opt-in `--typed-interactions` engineering route that reuses each
   existing P512 coordinate union to calculate a separate 32-field CORE8
   interaction challenger.
