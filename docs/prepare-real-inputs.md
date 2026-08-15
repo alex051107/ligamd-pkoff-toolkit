@@ -6,6 +6,15 @@ does not teach molecular-dynamics setup or decide whether a scientific system
 is suitable for training. Those are scientific responsibilities outside the
 public command.
 
+The public default endpoint marks the first persistent, geometry-defined
+complete exit for a **feature episode**. It does not replace a laboratory
+campaign's own 35/40 A remote-separation rule, if that campaign has one. Keep a
+campaign-specific long-distance result as separate quality-control evidence;
+do not substitute it for the default endpoint in a manifest merely because the
+number is larger. The two measurements use different reference objects and
+would create a different Current30 feature route. See [why the two rules are
+separate](endpoint-and-sampler.md#why-these-endpoint-thresholds-are-not-a-campaign-long-distance-cutoff).
+
 For the exact field definitions, read the [input-manifest reference](input-manifest.md).
 For the meaning of the exit rule and sampled frames, read the
 [episode and sampler explanation](endpoint-and-sampler.md).
