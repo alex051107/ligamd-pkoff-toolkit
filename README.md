@@ -45,6 +45,28 @@ canonical bound PDB + topology + three production NetCDF files
 The three replicas are never merged as coordinates. Each replica becomes one
 Dynamic10 vector first. Only corresponding feature values are averaged.
 
+### What “complete exit” means in this toolkit
+
+The default endpoint is an **episode boundary for feature extraction**. It is
+not a claim that the ligand has reached a universal far-away distance, and it
+is not a direct estimate of physical dissociation rate. A frame must satisfy
+all three of the following conditions:
+
+1. after aligning the frozen pocket back to the bound reference, the ligand
+   centroid has moved at least 15 A from its bound-pose position;
+2. the closest ligand-heavy-atom / protein-heavy-atom pair is more than 10 A
+   apart under periodic-boundary conditions; and
+3. both measurements remain true for 100 consecutive saved frames.
+
+The 15 A and 10 A values are not two versions of one distance. The first asks
+whether the ligand has left its original pocket; the second asks whether it is
+still close to *any* protein surface. Some simulation campaigns also use a
+separate 35 or 40 A long-distance monitor to certify a remote state. That can
+be a useful campaign-specific quality-control rule, but it answers a different
+question and must not silently replace the public endpoint. The full
+explanation, including why a larger distance is not automatically the better
+feature boundary, is in [Episode and sampler explanation](docs/endpoint-and-sampler.md#why-these-endpoint-thresholds-are-not-a-campaign-long-distance-cutoff).
+
 ## Install from a clone
 
 The supplied Conda environment contains the scientific dependencies, including

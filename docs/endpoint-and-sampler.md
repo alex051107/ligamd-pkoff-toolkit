@@ -47,6 +47,51 @@ The conditions are joined by **AND**. A geometrically clear frame is not enough
 by itself. Both conditions must be true for 100 consecutive **saved** frames.
 The first frame of the first qualifying run is the **endpoint onset**.
 
+### Why these endpoint thresholds are not a campaign long-distance cutoff
+
+These numbers have different reference objects and different jobs. Comparing
+15 A with 10 A, or replacing both with a larger number such as 35 or 40 A,
+would mix up those jobs.
+
+| Quantity | What is measured | What it establishes | What it does **not** establish |
+| --- | --- | --- | --- |
+| 15 A aligned-centroid displacement | The ligand centroid after the frozen pocket is aligned to the bound reference. Alignment removes overall protein translation and rotation first. | The ligand has moved away from the original bound pose and pocket. | That the ligand is clear of every other protein surface. |
+| Greater than 10 A whole-protein clearance | The closest pair among **all** ligand heavy atoms and standard-protein heavy atoms, using the periodic box. | No ligand heavy atom remains within 10 A of any protein heavy atom. | A particular atom-to-atom monitor has reached a large remote distance. |
+| 100 saved frames | The consecutive run length for which both geometry conditions hold. Its physical duration is 100 times `saved_frame_interval_ps`. | The first complete-exit frame was persistent rather than a one-frame excursion. | A universal physical residence time or a guarantee that the ligand can never return. |
+
+The two geometry conditions therefore protect against different failure modes.
+A ligand can move 15 A from its original pocket and still lie against another
+protein surface; the clearance condition rejects that frame. Conversely, an
+atom pair chosen as a local campaign monitor can be far apart while another
+part of the ligand is still near a different protein surface; the global
+minimum-distance condition catches that case.
+
+Some LiGaMD and other biased-MD production campaigns use a **separate,
+predeclared long-distance monitor**, often 35 or 40 A between named protein
+and ligand atoms, when deciding whether a replica has reached an
+unambiguously remote state. That is a valid campaign-specific dissociation
+certificate when its atom pair, structural review, and persistence rule have
+been defined for that campaign. It is not a portable replacement for
+endpoint-v2 for three reasons.
+
+1. A 35/40 A monitor normally measures one declared atom pair, whereas
+   endpoint-v2 uses a pocket-aligned centroid and an all-heavy-atom global
+   minimum. The numerical values cannot be compared as if they came from the
+   same ruler.
+2. The long-distance value depends on protein size, the selected anchor atom,
+   binding-site location, and periodic-box geometry. A value that is sensible
+   for one campaign is not automatically meaningful for another target.
+3. The public endpoint decides where the model episode stops: frame 0 through
+   the first persistent complete exit. Requiring a later 35/40 A event would
+   include more post-exit diffusion in P512 and change the feature vector. It
+   would no longer be compatible with the frozen Current30 trajectory route.
+
+Use the two rules side by side when both questions matter. Record a
+campaign-specific 35/40 A result as an additional long-distance quality check.
+Use endpoint-v2 to create the fixed, label-blind feature episode. Do not turn a
+campaign monitor into a hidden `--endpoint-contract` override when applying a
+bundled Combined30 profile.
+
 ~~~text
 production frame 0                      first stable-clear frame
 bound-to-exit path ------------------------------------o==== 99 confirming frames ===>
