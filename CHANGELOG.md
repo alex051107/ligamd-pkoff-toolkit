@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Added a data-free, GitHub-only review packet for the proposed model-performance
+  plan. The packet records the current aggregate evidence, the bounded two-track
+  proposal, its stop rules, and a Chinese prompt for an independent reviewer.
+- No endpoint, sampler, feature, model artifact, prediction, or public data
+  boundary changed.
+
 ## 0.1.0, 2026-08-12
 
 First public experimental release.
