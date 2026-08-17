@@ -1,0 +1,34 @@
+{
+  "schema_version": "ligamd_p512_sequence_input_manifest_v1.0",
+  "system_id": "EXAMPLE_ONLY",
+  "trajectory_protocol_compatibility": "UNKNOWN",
+  "routes": [
+    {
+      "replica_id": "replica_1",
+      "dense_trace": "replicas/replica_1/dense_reference_features.csv",
+      "selected_frames": "replicas/replica_1/p512_selected_frames.tsv",
+      "endpoint_onset_index0": 12345,
+      "endpoint_authority_id": "endpoint-v2-authority-receipt-id",
+      "p512_sampler_authority_id": "p512-sampler-receipt-id",
+      "saved_frame_interval_ps": 1.0
+    },
+    {
+      "replica_id": "replica_2",
+      "dense_trace": "replicas/replica_2/dense_reference_features.csv",
+      "selected_frames": "replicas/replica_2/p512_selected_frames.tsv",
+      "endpoint_onset_index0": 23456,
+      "endpoint_authority_id": "endpoint-v2-authority-receipt-id",
+      "p512_sampler_authority_id": "p512-sampler-receipt-id",
+      "saved_frame_interval_ps": 1.0
+    },
+    {
+      "replica_id": "replica_3",
+      "dense_trace": "replicas/replica_3/dense_reference_features.csv",
+      "selected_frames": "replicas/replica_3/p512_selected_frames.tsv",
+      "endpoint_onset_index0": 34567,
+      "endpoint_authority_id": "endpoint-v2-authority-receipt-id",
+      "p512_sampler_authority_id": "p512-sampler-receipt-id",
+      "saved_frame_interval_ps": 1.0
+    }
+  ]
+}

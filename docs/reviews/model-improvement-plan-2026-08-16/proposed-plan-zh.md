@@ -112,10 +112,13 @@ case-level predictions 和准入缺口，不用不稳定的 bootstrap 选模型�
 
 ### B1  Label-blind sequence serializer
 
+执行状态：`IMPLEMENTED_SYNTHETIC_CONTRACT_PASS`；公开实现尚未完成私有 N31
+93-route materialization，因此 `TEMPORAL_MODEL_RUN_AUTHORIZED` 仍为 `NO`。
+
 每条 replica 只读取现有 P512 source identities 和对应的 11 个物理通道。
 精确的列顺序、单位、来源、方向、缺失规则、审计字段、fold-local scaling
 边界和固定 shuffle 算法已冻结在
-[`p512-sequence-contract-v1.json`](p512-sequence-contract-v1.json)。serializer
+[`p512_sequence_v1.json`](../../../ligamd_pkoff/resources/contracts/p512_sequence_v1.json)。serializer
 实现不得自行改名、补值或重新计算另一套通道。
 
 ```text
