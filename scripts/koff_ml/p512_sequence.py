@@ -21,13 +21,17 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Sequence
 
 import numpy as np
 
 from ligamd_pkoff.resources import bundled_path
 from scripts.koff_ml.io import write_json
-from scripts.koff_ml.p512_sampler import P512Trace, load_p512_trace
+from scripts.koff_ml.p512_sampler import (
+    P512SamplerError,
+    P512Trace,
+    load_p512_trace,
+)
 
 
 DEFAULT_SEQUENCE_CONTRACT = bundled_path("contracts/p512_sequence_v1.json")
@@ -287,7 +291,10 @@ def serialize_p512_system(
         _require(indices[-1] == route["endpoint_onset_index0"], f"{replica_id}: final P512 frame is not the frozen endpoint onset")
         frame_count = _dense_frame_count(route["dense_trace"])
         _require(indices[-1] < frame_count, f"{replica_id}: selected source index exceeds dense trace")
-        trace = load_p512_trace(route["dense_trace"], expected_frames=frame_count)
+        try:
+            trace = load_p512_trace(route["dense_trace"], expected_frames=frame_count)
+        except P512SamplerError as exc:
+            raise P512SequenceError(f"{replica_id}: dense trace failed: {exc}") from exc
         ordered = _route_matrix(trace, indices, replica_id=replica_id)
         permutation = fixed_shuffle_permutation(
             contract_id=contract_id,

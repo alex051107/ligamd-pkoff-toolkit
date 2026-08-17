@@ -177,3 +177,18 @@ def test_sequence_serializer_rejects_selection_identity_drift(tmp_path: Path) ->
             output_npz=tmp_path / "sequence.npz",
             receipt_json=tmp_path / "receipt.json",
         )
+
+
+def test_sequence_serializer_wraps_dense_schema_failure(tmp_path: Path) -> None:
+    manifest = _manifest(tmp_path)
+    dense = tmp_path / "replica_1_dense.csv"
+    text = dense.read_text(encoding="utf-8")
+    text = text.replace("contact__A:1:ALA", "former_contact_a")
+    text = text.replace("contact__A:2:GLY", "former_contact_b")
+    dense.write_text(text, encoding="utf-8")
+    with pytest.raises(P512SequenceError, match="replica_1: dense trace failed"):
+        serialize_p512_system(
+            manifest_path=manifest,
+            output_npz=tmp_path / "sequence.npz",
+            receipt_json=tmp_path / "receipt.json",
+        )
