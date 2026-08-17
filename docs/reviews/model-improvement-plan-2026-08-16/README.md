@@ -66,11 +66,13 @@ Read these files in order.
    proposals, and blocked work.
 2. [Proposed two-track execution plan](proposed-plan-zh.md) states the exact
    objective, contracts, decision rules, and stop points.
-3. [Frozen data-free P512 sequence contract](p512-sequence-contract-v1.json)
+3. [Frozen data-free P512 sequence contract](../../../ligamd_pkoff/resources/contracts/p512_sequence_v1.json)
    fixes the 11-channel order, units, provenance, missing-value policy,
    fold-local scaling boundary, and label-independent shuffle manifest before
    implementation. It contains no trajectory or label row.
-4. [Chinese reviewer prompt](reviewer-prompt-zh.md) gives the requested review
+4. [Data-free sequence input example](p512-sequence-input-manifest.example.json)
+   shows the exact three-route hand-off without publishing a real system.
+5. [Chinese reviewer prompt](reviewer-prompt-zh.md) gives the requested review
    format and forces the reviewer to mark unsupported claims as not evaluable.
 
 Then use the repository itself to inspect the relevant authority.
@@ -96,8 +98,9 @@ Then use the repository itself to inspect the relevant authority.
 ```text
 PACKET_STATUS                         = PROPOSED_FOR_REVIEW
 MODEL_RUN_AUTHORIZED                  = NO
-SEQUENCE_SERIALIZER_IMPLEMENTED       = NO
+SEQUENCE_SERIALIZER_IMPLEMENTED       = YES_DEVELOPER_UTILITY
 SEQUENCE_INPUT_CONTRACT_FROZEN         = YES
+N31_93_ROUTE_MATERIALIZATION           = NOT_RUN
 TEMPORAL_GRU_EXECUTED                 = NO
 LOCKED_EVALUATION_ELIGIBLE_GROUPS     = 0
 NEW_GROUP_LABELS_ALLOWED_IN_TRAINING  = NO
@@ -113,3 +116,27 @@ the pull-request URL, then ask it to read this file and follow
 private workbook to judge whether the proposed process is coherent. It would
 need authorized private evidence to verify workbook-specific counts or to
 certify individual candidates.
+
+## Label-blind serializer handoff
+
+The implementation is intentionally separate from the ordinary predictor. It
+consumes three existing dense trace tables and their already-selected P512
+identity files; it does not rerun NetCDF processing, the endpoint, or P512. A
+P512-only 512-row table can be used directly. The existing three-method
+`selected_identities.tsv` output is also accepted: when its `method` column is
+present, the serializer selects exactly the 512 `P512` rows and verifies ranks
+`0..511` before reading source identities.
+
+```bash
+python -m scripts.koff_ml.p512_sequence \
+  --manifest p512-sequence-input-manifest.json \
+  --output-npz p512-sequence.npz \
+  --receipt-json p512-sequence-receipt.json
+```
+
+Start from
+[`p512-sequence-input-manifest.example.json`](p512-sequence-input-manifest.example.json).
+The output contains ordered and fixed-shuffle controls with identical rows and
+an audit receipt. It does not contain a label, fold, scaler, prediction, or
+model. A successful serialization therefore does not authorize the proposed
+GRU experiment.

@@ -1,7 +1,8 @@
 {
   "schema_version": "ligamd_p512_sequence_contract_v1.0",
   "contract_id": "P512_ORDERED_512x11_LABEL_BLIND_V1",
-  "status": "FROZEN_FOR_LABEL_BLIND_SERIALIZER_IMPLEMENTATION",
+  "status": "FROZEN_AND_IMPLEMENTED_LABEL_BLIND_SERIALIZER_V1",
+  "implementation_module": "scripts.koff_ml.p512_sequence",
   "model_run_authorized": false,
   "purpose": "Serialize the already-selected P512 real frames without re-running the endpoint, sampler, or any supervised operation.",
   "shape": {
@@ -9,7 +10,8 @@
     "replicas_per_system": 3,
     "frames_per_replica": 512,
     "channels_per_frame": 11,
-    "system_tensor_order": ["replica", "p512_rank", "channel"]
+    "system_tensor_order": ["replica", "p512_rank", "channel"],
+    "replica_axis_order": "lexicographic replica_id"
   },
   "channels": [
     {
@@ -116,8 +118,9 @@
     "endpoint": "existing endpoint-v2/simple-two-metric PASS authority",
     "sampler": "existing P512_MULTIBLOCK_PATH_ARCLENGTH_512_REAL_FRAMES identities",
     "selection_columns": ["system_id", "replica_id", "source_index0", "source_frame"],
+    "selection_table_compatibility": "A 512-row P512-only table is accepted directly. If a method column is present, the serializer selects exactly method=P512 before applying the 512-row contract; selection_rank0, when present, must be exactly 0..511.",
     "selection_requirements": [
-      "exactly 512 rows per route",
+      "exactly 512 rows per route after the frozen P512 filter",
       "source_index0 is unique and strictly increasing",
       "source_frame equals source_index0 plus one",
       "first and endpoint P512 frames are retained",
@@ -158,6 +161,7 @@
     "permutation_scope": "one fixed permutation per system and replica",
     "row_integrity": "all 11 channels move together",
     "algorithm": "For each p512 rank i, compute SHA256 over UTF-8 contract_id, NUL, seed, NUL, system_id, NUL, replica_id, NUL, i. Sort ranks by the 32 digest bytes and then by i. The sorted rank list is permutation_index0; H[position] = O[permutation_index0[position]].",
+    "permutation_sha256_encoding": "SHA256 over permutation_index0 encoded as 512 little-endian signed-int64 values in C order",
     "manifest_fields": ["system_id", "replica_id", "seed", "permutation_index0[512]", "permutation_sha256"],
     "labels_or_folds_read": false
   },

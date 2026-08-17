@@ -22,6 +22,7 @@ They are repository paths, not a requirement to run every module by hand.
 | [scripts/koff_ml/complete_static_geometric.py](../scripts/koff_ml/complete_static_geometric.py) | Defines Static20 field order and calculates bound-reference geometry. RDKit ligand descriptors are computed by the public bridge in toolkit.py. | Called during <code>featurize</code>. |
 | [endpoint_v2.json](../ligamd_pkoff/resources/contracts/endpoint_v2.json) | Frozen endpoint settings read by the public route. | Bundled public resource. |
 | [p512_sampler_v1.json](../ligamd_pkoff/resources/contracts/p512_sampler_v1.json) | Frozen P512 budget and path-sampling settings. | Bundled public resource. |
+| [p512_sequence_v1.json](../ligamd_pkoff/resources/contracts/p512_sequence_v1.json) | Frozen order, units, missing-value rules, and fixed-shuffle control for the developer-only <code>3 x 512 x 11</code> representation. | Bundled public resource read by <code>p512_sequence.py</code>; it does not authorize a model run. |
 | [model_registry.json](../ligamd_pkoff/resources/models/experimental_n31_registry_v1/model_registry.json) | Describes the four bundled **experimental** baselines, their feature order, and their scope warnings. | Read by <code>predict</code>. |
 
 The public route is intentionally one-way. <code>featurize</code> never reads
@@ -39,6 +40,7 @@ meaning of each hand-off.
 | [scripts/koff_ml/prediction_first_coordinate_materialization.py](../scripts/koff_ml/prediction_first_coordinate_materialization.py) | Validates coordinate atom order before coordinate-derived features are materialised. | Support library. |
 | [scripts/koff_ml/io.py](../scripts/koff_ml/io.py) | Provides small JSON, CSV, and identity-file helpers used in receipts. | Support library. |
 | [scripts/koff_ml/serialization_compat.py](../scripts/koff_ml/serialization_compat.py) | Supplies a narrowly scoped compatibility alias so the first four bundled joblib files can load. | Used automatically by <code>predict</code>. Do not invoke directly. |
+| [scripts/koff_ml/p512_sequence.py](../scripts/koff_ml/p512_sequence.py) | Serializes three existing P512 routes into matched ordered and deterministically shuffled <code>3 x 512 x 11</code> tensors without reading labels, folds, predictions, or models. | Developer utility for the bounded temporal-representation experiment. It does not run the endpoint, sampler, scaler, or GRU. |
 
 ## Developer-only supervised-model tools
 

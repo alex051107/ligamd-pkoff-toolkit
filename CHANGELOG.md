@@ -10,8 +10,14 @@
   consolidated temporal engineering checks into one receipt, narrowed a
   negative GRU claim to the fixed protocol, and separated BiCoA from the Ridge
   primary comparison.
-- No endpoint, sampler, feature, model artifact, prediction, or public data
-  boundary changed; the sequence contract is not yet a runtime serializer.
+- Added a developer-only, label-blind P512 sequence serializer plus a synthetic
+  contract test. It reuses existing dense traces and P512 identities, emits
+  matched ordered/fixed-shuffle tensors, and does not run a model.
+- The serializer accepts the existing three-method `selected_identities.tsv`
+  artifact directly by applying one frozen `method=P512` filter and checking
+  exact ranks `0..511`; no per-route copied selection file is required.
+- No endpoint, sampler, Current30 feature, bundled model, prediction, or public
+  data boundary changed.
 
 ## 0.1.0, 2026-08-12
 
