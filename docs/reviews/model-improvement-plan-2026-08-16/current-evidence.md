@@ -64,6 +64,13 @@ The word `Finished` in that workbook is a collaborator workflow status. It is
 not accepted as a synonym for the public endpoint, three-replica feature
 readiness, or supervised-model admission.
 
+The revised admission ledger also carries one trajectory-protocol gate. It
+records whether saved-frame cadence, LiGaMD boost/sigma settings, and the
+production protocol are compatible with the frozen N31 authority. `UNKNOWN`
+is not silently treated as `PASS`. This matters because an acquisition shift
+could otherwise be mistaken for a failure of Dynamic10 or protein-family
+transfer.
+
 ## Current claim ceiling
 
 The public repository supports a reproducible trajectory-to-feature route and
