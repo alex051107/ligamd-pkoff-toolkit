@@ -121,7 +121,11 @@ certify individual candidates.
 
 The implementation is intentionally separate from the ordinary predictor. It
 consumes three existing dense trace tables and their already-selected P512
-identity files; it does not rerun NetCDF processing, the endpoint, or P512.
+identity files; it does not rerun NetCDF processing, the endpoint, or P512. A
+P512-only 512-row table can be used directly. The existing three-method
+`selected_identities.tsv` output is also accepted: when its `method` column is
+present, the serializer selects exactly the 512 `P512` rows and verifies ranks
+`0..511` before reading source identities.
 
 ```bash
 python -m scripts.koff_ml.p512_sequence \

@@ -64,37 +64,46 @@ def _write_dense(path: Path, *, offset: float) -> None:
             previous = contacts
 
 
-def _write_selection(path: Path, *, system_id: str, replica_id: str) -> None:
+def _write_selection(
+    path: Path, *, system_id: str, replica_id: str, include_other_methods: bool = False
+) -> None:
     # Skip dense frame index 255, where one contact breaks, while retaining
     # index 256. This distinguishes the frozen dense-transition count from an
     # incorrect recomputation between adjacent nonconsecutive P512 rows.
     source_indices = [*range(255), *range(256, 512), 599]
     assert len(source_indices) == 512
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(
-            handle,
-            fieldnames=("system_id", "replica_id", "source_index0", "source_frame"),
-            delimiter="\t",
-        )
+        fieldnames = ["system_id", "replica_id", "source_index0", "source_frame"]
+        if include_other_methods:
+            fieldnames.extend(("method", "selection_rank0"))
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
-        for index in source_indices:
-            writer.writerow(
-                {
+        methods = ("U512", "E512_v2", "P512") if include_other_methods else (None,)
+        for method in methods:
+            for rank, index in enumerate(source_indices):
+                row = {
                     "system_id": system_id,
                     "replica_id": replica_id,
                     "source_index0": index,
                     "source_frame": index + 1,
                 }
-            )
+                if method is not None:
+                    row.update({"method": method, "selection_rank0": rank})
+                writer.writerow(row)
 
 
-def _manifest(tmp_path: Path) -> Path:
+def _manifest(tmp_path: Path, *, include_other_methods: bool = False) -> Path:
     routes = []
     for position, replica_id in enumerate(("replica_3", "replica_1", "replica_2")):
         dense = tmp_path / f"{replica_id}_dense.csv"
         selection = tmp_path / f"{replica_id}_selection.tsv"
         _write_dense(dense, offset=position / 10)
-        _write_selection(selection, system_id="SYNTHETIC", replica_id=replica_id)
+        _write_selection(
+            selection,
+            system_id="SYNTHETIC",
+            replica_id=replica_id,
+            include_other_methods=include_other_methods,
+        )
         routes.append(
             {
                 "replica_id": replica_id,
@@ -124,7 +133,7 @@ def _manifest(tmp_path: Path) -> Path:
 
 
 def test_sequence_serializer_preserves_order_and_uses_fixed_row_shuffle(tmp_path: Path) -> None:
-    manifest = _manifest(tmp_path)
+    manifest = _manifest(tmp_path, include_other_methods=True)
     payload_path = tmp_path / "sequence.npz"
     receipt_path = tmp_path / "sequence_receipt.json"
     receipt = serialize_p512_system(

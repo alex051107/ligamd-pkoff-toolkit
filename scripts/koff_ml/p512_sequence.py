@@ -177,17 +177,29 @@ def _dense_frame_count(path: Path) -> int:
 
 def _read_selection(path: Path, *, system_id: str, replica_id: str) -> tuple[np.ndarray, np.ndarray]:
     with path.open("r", encoding="utf-8", newline="") as handle:
-        rows = list(csv.DictReader(handle, delimiter="\t"))
+        reader = csv.DictReader(handle, delimiter="\t")
+        fields = set(reader.fieldnames or ())
+        rows = list(reader)
     required = {"system_id", "replica_id", "source_index0", "source_frame"}
-    _require(rows and required <= set(rows[0]), f"{replica_id}: selected-frame schema is incomplete")
+    _require(required <= fields, f"{replica_id}: selected-frame schema is incomplete")
+    if "method" in fields:
+        rows = [row for row in rows if str(row.get("method", "")).strip() == "P512"]
+        _require(rows, f"{replica_id}: multi-method selection table contains no P512 rows")
     _require(len(rows) == 512, f"{replica_id}: selected-frame row count is {len(rows)}, expected 512")
     _require({str(row["system_id"]).strip() for row in rows} == {system_id}, f"{replica_id}: selected-frame system_id mismatch")
     _require({str(row["replica_id"]).strip() for row in rows} == {replica_id}, f"{replica_id}: selected-frame replica_id mismatch")
     try:
         indices = np.asarray([int(row["source_index0"]) for row in rows], dtype=np.int64)
         frames = np.asarray([int(row["source_frame"]) for row in rows], dtype=np.int64)
+        ranks = (
+            [int(row["selection_rank0"]) for row in rows]
+            if "selection_rank0" in fields
+            else None
+        )
     except (TypeError, ValueError) as exc:
         raise P512SequenceError(f"{replica_id}: selected-frame identities are not integers") from exc
+    if ranks is not None:
+        _require(ranks == list(range(512)), f"{replica_id}: P512 selection ranks are not exactly 0..511")
     _require(np.array_equal(frames, indices + 1), f"{replica_id}: source_frame is not source_index0 + 1")
     _require(indices[0] == 0 and np.all(np.diff(indices) > 0), f"{replica_id}: source indices are not strictly increasing from frame 0")
     return indices, frames
