@@ -118,8 +118,9 @@
     "endpoint": "existing endpoint-v2/simple-two-metric PASS authority",
     "sampler": "existing P512_MULTIBLOCK_PATH_ARCLENGTH_512_REAL_FRAMES identities",
     "selection_columns": ["system_id", "replica_id", "source_index0", "source_frame"],
+    "selection_table_compatibility": "A 512-row P512-only table is accepted directly. If a method column is present, the serializer selects exactly method=P512 before applying the 512-row contract; selection_rank0, when present, must be exactly 0..511.",
     "selection_requirements": [
-      "exactly 512 rows per route",
+      "exactly 512 rows per route after the frozen P512 filter",
       "source_index0 is unique and strictly increasing",
       "source_frame equals source_index0 plus one",
       "first and endpoint P512 frames are retained",
