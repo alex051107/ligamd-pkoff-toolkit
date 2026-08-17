@@ -24,7 +24,7 @@
 10. `DATA_NOTICE.md`
 11. `ligamd_pkoff/resources/models/experimental_n31_registry_v1/model_scoreboard.tsv`
 12. `ligamd_pkoff/resources/models/experimental_n31_registry_v1/paired_dynamic_increment.tsv`
-13. `docs/reviews/model-improvement-plan-2026-08-16/p512-sequence-contract-v1.json`
+13. `ligamd_pkoff/resources/contracts/p512_sequence_v1.json`
 
 如果审查某段代码，请给出 repository path 和行号。不要因为某个 private-derived
 aggregate 无法在公开仓库重算，就把它改写成已验证；请标记
