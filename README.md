@@ -29,6 +29,16 @@ you read a lesson before you can work.
 The [code map](docs/code-map.md) is for readers who want to trace a documented
 operation into the public source code.
 
+## Active plan review
+
+The repository also contains a data-free review packet for the proposed next
+model-development step. It is written for a reviewer who has access only to
+GitHub and has not attended the internal project meetings. Start with
+[the 16 August 2026 model-plan review context](docs/reviews/model-improvement-plan-2026-08-16/README.md).
+The packet separates public evidence, private aggregate statements, proposed
+work, and work that is still blocked. It does not authorize a model run or
+change the bundled experimental registry.
+
 ## What happens in one run
 
 ```text

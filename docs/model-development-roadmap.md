@@ -1,5 +1,15 @@
 # Model-development roadmap
 
+> **Status note, 16 August 2026.** This page records the decision sequence in
+> the initial public release. A later, data-free proposal is now available in
+> [the model-plan review packet](reviews/model-improvement-plan-2026-08-16/README.md).
+> The proposal asks whether “pristine prospective panel” should be replaced by
+> a locked independent-group design because the new private candidate roster
+> already contains experimental values. It also asks reviewers whether one fixed,
+> development-only ordered-versus-shuffled temporal smoke is justified before
+> independent-group confirmation. The proposal has not run a model and does
+> not silently replace the roadmap below.
+
 The four bundled models are a controlled starting point. They do not justify a
 large search across model families. The next scientific question is narrower:
 does trajectory information improve experimental-pKoff prediction beyond the
