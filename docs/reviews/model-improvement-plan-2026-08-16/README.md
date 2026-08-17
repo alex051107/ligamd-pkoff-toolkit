@@ -66,7 +66,11 @@ Read these files in order.
    proposals, and blocked work.
 2. [Proposed two-track execution plan](proposed-plan-zh.md) states the exact
    objective, contracts, decision rules, and stop points.
-3. [Chinese reviewer prompt](reviewer-prompt-zh.md) gives the requested review
+3. [Frozen data-free P512 sequence contract](p512-sequence-contract-v1.json)
+   fixes the 11-channel order, units, provenance, missing-value policy,
+   fold-local scaling boundary, and label-independent shuffle manifest before
+   implementation. It contains no trajectory or label row.
+4. [Chinese reviewer prompt](reviewer-prompt-zh.md) gives the requested review
    format and forces the reviewer to mark unsupported claims as not evaluable.
 
 Then use the repository itself to inspect the relevant authority.
@@ -93,6 +97,7 @@ Then use the repository itself to inspect the relevant authority.
 PACKET_STATUS                         = PROPOSED_FOR_REVIEW
 MODEL_RUN_AUTHORIZED                  = NO
 SEQUENCE_SERIALIZER_IMPLEMENTED       = NO
+SEQUENCE_INPUT_CONTRACT_FROZEN         = YES
 TEMPORAL_GRU_EXECUTED                 = NO
 LOCKED_EVALUATION_ELIGIBLE_GROUPS     = 0
 NEW_GROUP_LABELS_ALLOWED_IN_TRAINING  = NO

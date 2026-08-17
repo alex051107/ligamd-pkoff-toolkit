@@ -23,7 +23,8 @@ pKoff 的定义，不共享科学结论。
 
 1. 建立一张候选准入表，逐项记录 label authority、exact-ligand identity、
    三条 endpoint-passing replicas、P512/Current30 readiness 和 development
-   exposure。
+   exposure。表中只额外增加一个 acquisition gate：
+   `TRAJECTORY_PROTOCOL_COMPATIBILITY = PASS | SHIFT | UNKNOWN`。
 2. 从现有 P512 source-frame identities 序列化
    `31 systems x 3 replicas x 512 frames x 11 channels`。不重跑 MD，不重判
    endpoint，不重新采样，也不读取 pKoff、fold 或模型误差。
@@ -51,6 +52,14 @@ OUT_OF_SCOPE_NEW_FAMILY
 同家族的新 ligand panel 和新 protein-family transfer panel 分开。一个系统
 即使有三条完成的模拟，也不能跳过 assay ligand、protein construct、label
 source 和 exact chemical identity 的核对。
+
+`TRAJECTORY_PROTOCOL_COMPATIBILITY` 只核对三类会直接影响动态输入的事实：
+保存帧 cadence、LiGaMD boost/sigma 合同、production protocol lineage 是否能与
+冻结 N31 authority 对齐。`UNKNOWN` 不得进入 locked Dynamic10 主比较；`SHIFT`
+只能进入单独的 development sensitivity。为了不扩展状态机，前置门都通过但
+protocol 仍为 `UNKNOWN` 的系统保持 `BLOCKED_FEATURE`，并在 `blocking_reason`
+中明确写出 protocol 缺口。当前 N31 未保留单一 authoritative cadence，因此
+在该 authority 恢复前不能凭目录名推断 `PASS`。
 
 ### A2  只为已通过前置门的候选生成 features
 
@@ -94,7 +103,8 @@ sampler 或 model development，则降级为 `DEVELOPMENT_SENSITIVITY`。
 
 计划不预设 5、10 或 15 个 group。先确定最小有意义的 paired MAE difference、
 现有 group-loss difference 方差、alpha、power、family composition 和 admission
-attrition，再做 precision 或 power planning。若合格 groups 不足，只报告
+attrition、每个 group 内的 system 结构，以及可获得的 assay uncertainty，再做
+precision 或 power planning。若合格 groups 不足，只报告
 case-level predictions 和准入缺口，不用不稳定的 bootstrap 选模型，也不补换
 更容易的候选。
 
@@ -103,6 +113,10 @@ case-level predictions 和准入缺口，不用不稳定的 bootstrap 选模型�
 ### B1  Label-blind sequence serializer
 
 每条 replica 只读取现有 P512 source identities 和对应的 11 个物理通道。
+精确的列顺序、单位、来源、方向、缺失规则、审计字段、fold-local scaling
+边界和固定 shuffle 算法已冻结在
+[`p512-sequence-contract-v1.json`](p512-sequence-contract-v1.json)。serializer
+实现不得自行改名、补值或重新计算另一套通道。
 
 ```text
 one replica  = 512 real frames x 11 channels
@@ -112,7 +126,9 @@ one label    = one system-level experimental pKoff
 
 要求每条 route 的 source index 严格递增，shape 和数值有限。`source_index` 与
 normalized progress 只进入审计 metadata，首版 encoder 不使用。三条 replicas
-仍不是三条监督样本。
+仍不是三条监督样本。serializer 输出原始物理单位，不读取 fold，也不做全数据
+scaling；若后续获批训练，每个 outer LOGO fold 只在 outer-training systems 上
+fit 一套 channel scaler，O 与 H 共用。
 
 只做一个 synthetic ordering test 加一个 93-route shape/finite/monotonic check。
 不重新读取 NetCDF 做第二套 endpoint 或 P512 parity。
@@ -172,19 +188,21 @@ INCONCLUSIVE  = OTHER_FINITE_ENGINEERING_VALID_RESULT
 科学解释前只做一个合并的工程有效性检查。
 
 ```text
-ENGINEERING_VALID =
+ENGINEERING_VALIDITY_RECEIPT =
   ALL_27_OUTER_FOLDS_COMPLETE
   AND ALL_PREDICTIONS_AND_LOSSES_FINITE
   AND ORDERED_AND_SHUFFLED_BUDGETS_IDENTICAL
-  AND PARAMETER_UPDATE_NORM > 1e-12
+  AND FIXED_PERMUTATION_MANIFEST_MATCHES_CONTRACT
   AND BOTH_RESIDUAL_CORRECTION_STANDARD_DEVIATIONS > 1e-12
 ```
 
 若不满足，结果只能是 `ENGINEERING_INVALID`。此时停止并报告工程失败，不调
 learning rate、不换 seed，也不能解释成没有顺序信号。
 
-实验完成一次后停止。Primary 不支持时关闭当前 order-sensitive branch；
-Primary 支持而 secondary 不支持时，只报告 development-set order sensitivity；
+实验完成一次后停止。Primary 不支持时只关闭这个固定的 11-channel、hidden-8、
+single-seed GRU protocol 在 N31 上的继续开发；它不证明所有 frame-order
+information 或所有 sequence representation 都不存在。Primary 支持而
+secondary 不支持时，只报告 development-set order sensitivity；
 两者都支持时冻结候选并等待 independent groups。任何结果都不触发 TCN、
 Transformer、第二个 GRU、第二个 seed 或 architecture tournament。
 
@@ -213,7 +231,8 @@ rank、module、seed 或 optimizer。
 3. 冻结 encoder，只运行一个 linear 或 Ridge probe。
 4. 在 independent groups 上确认 frozen embedding 的增量。
 5. 只有前四步通过，才做一次同 checkpoint、head、fold 和训练预算下的 fixed
-   encoder LoRA 与 frozen control 比较。
+   encoder LoRA 与 frozen control 比较。两臂必须使用同一 checkpoint、标准化
+   protein/ligand input、groups/folds、linear 或 Ridge head 和训练预算。
 
 若 frozen probe 没有增量，LoRA 不启动。Static encoder LoRA 即使降低绝对
 pKoff error，也不能单独证明 LiGaMD trajectory 有价值。当前没有适合直接
@@ -229,7 +248,7 @@ pKoff error，也不能单独证明 LiGaMD trajectory 有价值。当前没有�
 | Frozen N31 to new groups comparison | Hold | 当前合格新 groups 为零 |
 | One S/O/H GRU smoke | Hold for explicit approval | 只允许一次 development-only test |
 | PLS in locked evaluation | Delete | Development-exposed post-hoc family，不增加主问题清晰度 |
-| BiCoA A/B secondary | Hold | 仅限 descriptor-valid 且 input-overlap-safe groups |
+| BiCoA A/B secondary | Hold as a separate protocol | Ridge primary 完整报告后才运行；仅限 descriptor-valid 且 KinetX exact-input non-overlap groups，不能覆盖 primary 结果 |
 | More tabular families | Delete | 当前表示上已覆盖主要低容量函数族 |
 | TCN/Transformer/model zoo | Delete | 小样本下增加选择自由度，不回答顺序 null |
 | LoRA rank/module/seed sweep | Delete | 当前 output-head implementation 已关闭 |
@@ -238,7 +257,7 @@ pKoff error，也不能单独证明 LiGaMD trajectory 有价值。当前没有�
 
 | Batch | Focused check | Independent review | Full model rerun | Hash |
 | --- | --- | --- | --- | --- |
-| Admission ledger | one schema/enum/duplicate/label-blind check | none until cohort freeze | no | no |
+| Admission ledger | one schema/enum/duplicate/label-blind/protocol-status check | none until cohort freeze | no | no |
 | Sequence serializer | one synthetic ordering test plus one 93-route contract check | one combined review at runnable milestone | no | one only if a deterministic tensor is transferred |
 | GRU smoke | one leakage/coverage/budget/result-contract check | one combined review after the single run | exactly one authorized run | no routine hash |
 | Locked new-group evaluation | one freeze/admission/prediction check | one combined review before label-error readback | one frozen application | one digest for the frozen cohort/model authority |

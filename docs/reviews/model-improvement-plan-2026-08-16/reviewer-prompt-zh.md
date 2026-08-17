@@ -24,6 +24,7 @@
 10. `DATA_NOTICE.md`
 11. `ligamd_pkoff/resources/models/experimental_n31_registry_v1/model_scoreboard.tsv`
 12. `ligamd_pkoff/resources/models/experimental_n31_registry_v1/paired_dynamic_increment.tsv`
+13. `docs/reviews/model-improvement-plan-2026-08-16/p512-sequence-contract-v1.json`
 
 如果审查某段代码，请给出 repository path 和行号。不要因为某个 private-derived
 aggregate 无法在公开仓库重算，就把它改写成已验证；请标记
@@ -39,7 +40,8 @@ aggregate 无法在公开仓库重算，就把它改写成已验证；请标记
 1. 工具链和 predictor 的职责边界。
 2. 当前 Dynamic10 证据的强弱。
 3. candidate admission 与 locked evaluation 的防泄漏设计。
-4. ordered-versus-shuffled GRU 的科学问题和停止规则。
+4. ordered-versus-shuffled GRU 的 11-channel、fold-local scaling、固定
+   permutation、科学问题和停止规则。
 5. Deep Learning 与 LoRA 的 reopening 条件。
 
 ### B  核对关键判断
@@ -65,14 +67,15 @@ aggregate 无法在公开仓库重算，就把它改写成已验证；请标记
 对下列组件返回 `KEEP`、`REVISE` 或 `DELETE`。`REVISE` 必须给一句可直接
 替换的方案。建议增加一个方法时，必须删除或替换一个现有组件，不能扩大清单。
 
-1. 一张 candidate admission ledger。
+1. 一张只新增 `TRAJECTORY_PROTOCOL_COMPATIBILITY` gate 的 candidate admission ledger。
 2. 同家族 new-ligand 与新家族 transfer panel 分开。
 3. N31-trained Ridge pair 作为 locked evaluation 的唯一 primary pair。
 4. Label-blind P512 sequence serializer。
 5. 一次 S/O/H residual GRU smoke。
-6. 一个合并 engineering-validity check 加一个三态 scientific rule。
+6. 一张合并的 `ENGINEERING_VALIDITY_RECEIPT` 加一个三态 scientific rule；不保留
+   独立 parameter-update-norm gate。
 7. 单 seed、固定预算、无 rescue。
-8. BiCoA A/B 仅作 overlap-safe secondary。
+8. BiCoA A/B 仅在 Ridge primary 完整报告后另立 overlap-safe secondary。
 9. Frozen encoder probe 后才允许一次 encoder LoRA。
 10. 删除更多 tabular families、TCN/Transformer tournament 和 LoRA sweeps。
 
@@ -81,8 +84,8 @@ aggregate 无法在公开仓库重算，就把它改写成已验证；请标记
 1. 当前最值得立即执行的是 candidate ledger、sequence serializer，还是两者并行？
 2. N31 上的一次 S/O/H smoke 是否值得做？它可以改变哪一条结论，不能改变哪一条？
 3. 当前计划里最像 over-engineering 的一项是什么？请删除或合并，不要只批评。
-4. 当前计划里最危险的 under-checking 是什么？最多增加一个检查，并说明它阻止
-   哪个具体错误。
+4. 当前唯一新增的 trajectory-protocol gate 是否足以阻止 acquisition shift 被误写
+   成 Dynamic10 或 family-transfer 失败？不要再增加第二个 admission 状态机。
 5. 若 private workbook 不能公开，公开 packet 还缺什么最小的 aggregate evidence
    才能审查计划？不要要求上传逐系统 labels、ligand identities 或 raw trajectories。
 6. LoRA 最合理的未来对象是 static encoder、temporal encoder，还是暂不开放？
