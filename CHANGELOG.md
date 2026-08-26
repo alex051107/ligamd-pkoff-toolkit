@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add an editable, source-linked workflow figure that separates label-blind
+  three-replica trajectory analysis from the optional experimental-pKoff
+  prediction step and makes the fail-closed endpoint boundary visible.
+
 ## 0.1.0, 2026-08-12
 
 First public experimental release.
