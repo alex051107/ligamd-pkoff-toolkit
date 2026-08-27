@@ -13,7 +13,7 @@ feature vector into a **predicted experimental pKoff**. That target is an
 assay-derived label. It is not a physical dissociation rate calculated from a
 simulation clock, and the bundled models remain `EXPERIMENTAL`.
 
-![LiGaMD illustrated analysis path: one canonical HSP90-ligand reference anchors three separate trajectory replicas, each passes endpoint and real-frame sampling before static and dynamic features reach an optional frozen assay-label model](docs/ligamd-readme-hero.jpg)
+![LiGaMD illustrated analysis path: one canonical HSP90-ligand reference anchors three separate trajectory replicas, each passes endpoint and real-frame sampling before static and dynamic features reach an optional frozen assay-label model](docs/ligamd-readme-hero-v2.jpg)
 
 *Illustrated reading: the three replicas remain separate through endpoint and
 real-frame sampling. Dynamic features are calculated per replica before
