@@ -13,7 +13,14 @@ feature vector into a **predicted experimental pKoff**. That target is an
 assay-derived label. It is not a physical dissociation rate calculated from a
 simulation clock, and the bundled models remain `EXPERIMENTAL`.
 
-## Workflow at a glance
+![LiGaMD illustrated analysis path: one canonical HSP90-ligand reference anchors three separate trajectory replicas, each passes endpoint and real-frame sampling before static and dynamic features reach an optional frozen assay-label model](docs/ligamd-readme-hero.jpg)
+
+*Illustrated reading: the three replicas remain separate through endpoint and
+real-frame sampling. Dynamic features are calculated per replica before
+aggregation; only the resulting feature receipt can enter the optional frozen
+experimental-pKoff model.*
+
+## Technical workflow
 
 ![LiGaMD pKoff workflow: a canonical bound structure and three separate replicas pass endpoint-v2 and P512 before Static20 and Dynamic10 features enter an optional frozen experimental-pKoff model](docs/ligamd-pkoff-workflow.svg)
 
