@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 980" role="img" aria-labelledby="title desc">
+  <title id="title">LiGaMD trajectory analysis and experimental pKoff workflow</title>
+  <desc id="desc">A label-blind route from a canonical bound structure and three production replicas through a shared structural reference, endpoint-v2 validation, P512 frame selection, static and dynamic feature construction, and an optional frozen model that predicts an experimental assay label. Failed endpoint checks return out of scope.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#263532"/>
+    </marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2A7F78"/>
+    </marker>
+    <marker id="arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B85C45"/>
+    </marker>
+    <style>
+      .sans { font-family: Arial, Helvetica, sans-serif; }
+      .eyebrow { font-size: 17px; font-weight: 700; letter-spacing: 2.6px; fill: #2A7F78; }
+      .title { font-size: 44px; font-weight: 700; fill: #182321; }
+      .subtitle { font-size: 20px; fill: #53615E; }
+      .lane { font-size: 16px; font-weight: 700; letter-spacing: 1.8px; fill: #66716E; }
+      .stage-no { font-size: 14px; font-weight: 700; letter-spacing: 1.2px; fill: #8A6625; }
+      .stage-title { font-size: 21px; font-weight: 700; fill: #182321; }
+      .body { font-size: 16px; fill: #475552; }
+      .small { font-size: 14px; fill: #5D6966; }
+      .callout { font-size: 18px; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="980" fill="#FBFBF8"/>
+  <rect x="55" y="45" width="1490" height="890" rx="24" fill="#FFFFFF" stroke="#D5D8D0" stroke-width="2"/>
+
+  <g class="sans">
+    <text x="105" y="108" class="eyebrow">HSP90 / LIGAMD PKOFF TOOLKIT</text>
+    <text x="105" y="166" class="title">Three validated replicas become one scoped feature receipt.</text>
+    <text x="105" y="205" class="subtitle">Endpoint detection and frame selection are label-blind; experimental pKoff prediction is a separate optional step.</text>
+
+    <text x="105" y="265" class="lane">STRUCTURAL INPUTS</text>
+    <text x="510" y="265" class="lane">TRAJECTORY ANALYSIS — EACH REPLICA STAYS SEPARATE</text>
+    <text x="1260" y="265" class="lane">OPTIONAL MODEL</text>
+
+    <g transform="translate(105 305)">
+      <rect width="300" height="140" rx="18" fill="#F6F4EC" stroke="#B88732" stroke-width="2"/>
+      <text x="22" y="34" class="stage-no">01 / SHARED REFERENCE</text>
+      <text x="22" y="72" class="stage-title">Canonical bound PDB</text>
+      <text x="22" y="101" class="body">+ matching topology</text>
+      <text x="22" y="126" class="small">ligand order · pocket · contacts</text>
+    </g>
+
+    <g transform="translate(105 485)">
+      <rect width="300" height="205" rx="18" fill="#EDF4F1" stroke="#2A7F78" stroke-width="2"/>
+      <text x="22" y="34" class="stage-no" fill="#2A7F78">02 / PRODUCTION</text>
+      <text x="22" y="70" class="stage-title">Three NetCDF replicas</text>
+      <g transform="translate(22 94)">
+        <path d="M 0 28 C 24 3, 48 52, 72 24 S 120 8, 150 31 S 208 45, 248 17" fill="none" stroke="#2A7F78" stroke-width="3"/>
+        <path d="M 0 62 C 24 38, 48 84, 72 57 S 120 41, 150 67 S 208 79, 248 52" fill="none" stroke="#6A9C96" stroke-width="3"/>
+        <path d="M 0 82 C 24 57, 48 104, 72 77 S 120 60, 150 86 S 208 98, 248 72" fill="none" stroke="#93B8B3" stroke-width="3"/>
+      </g>
+      <text x="22" y="190" class="small">coordinates are never merged</text>
+    </g>
+
+    <line x1="405" y1="375" x2="485" y2="375" stroke="#263532" stroke-width="3" marker-end="url(#arrow)"/>
+    <path d="M 405 585 C 450 585, 450 375, 485 375" fill="none" stroke="#263532" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <g transform="translate(510 300)">
+      <rect width="250" height="150" rx="18" fill="#F2F3EF" stroke="#687572" stroke-width="2"/>
+      <text x="20" y="34" class="stage-no" fill="#56625F">03 / ENDPOINT-v2</text>
+      <text x="20" y="70" class="stage-title">Complete-exit gate</text>
+      <text x="20" y="100" class="body">≥15 Å bound-pose displacement</text>
+      <text x="20" y="126" class="body">AND &gt;10 Å protein clearance</text>
+      <text x="20" y="146" class="small">100 saved frames persistent</text>
+    </g>
+
+    <g transform="translate(825 300)">
+      <rect width="225" height="150" rx="18" fill="#F6F4EC" stroke="#B88732" stroke-width="2"/>
+      <text x="20" y="34" class="stage-no">04 / P512</text>
+      <text x="20" y="70" class="stage-title">Select real frames</text>
+      <text x="20" y="101" class="body">512 unique indices</text>
+      <text x="20" y="127" class="body">per passing replica</text>
+      <text x="20" y="146" class="small">no coordinate interpolation</text>
+    </g>
+
+    <line x1="760" y1="375" x2="814" y2="375" stroke="#263532" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <path d="M 635 450 L 635 520 L 510 520" fill="none" stroke="#B85C45" stroke-width="3" stroke-dasharray="8 7" marker-end="url(#arrow-warn)"/>
+    <rect x="510" y="500" width="250" height="88" rx="15" fill="#FFF0EB" stroke="#B85C45" stroke-width="2"/>
+    <text x="530" y="534" class="callout" fill="#9D4936">ANY REPLICA FAILS</text>
+    <text x="530" y="564" class="body">OUT_OF_SCOPE_NO_PREDICTION</text>
+
+    <g transform="translate(825 500)">
+      <rect width="225" height="205" rx="18" fill="#EDF4F1" stroke="#2A7F78" stroke-width="2"/>
+      <text x="20" y="34" class="stage-no" fill="#2A7F78">05 / DYNAMIC10</text>
+      <text x="20" y="70" class="stage-title">Measure each path</text>
+      <text x="20" y="105" class="body">replica 1 → vector</text>
+      <text x="20" y="133" class="body">replica 2 → vector</text>
+      <text x="20" y="161" class="body">replica 3 → vector</text>
+      <line x1="20" y1="177" x2="205" y2="177" stroke="#AFC9C2"/>
+      <text x="20" y="198" class="small">then average features</text>
+    </g>
+
+    <path d="M 938 450 L 938 489" fill="none" stroke="#263532" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <g transform="translate(1110 300)">
+      <rect width="230" height="150" rx="18" fill="#F2F3EF" stroke="#687572" stroke-width="2"/>
+      <text x="20" y="34" class="stage-no" fill="#56625F">06 / STATIC20</text>
+      <text x="20" y="70" class="stage-title">Bound-structure</text>
+      <text x="20" y="100" class="body">descriptors from the</text>
+      <text x="20" y="126" class="body">canonical reference</text>
+    </g>
+
+    <g transform="translate(1110 520)">
+      <rect width="230" height="165" rx="18" fill="#E9F1F4" stroke="#4B7787" stroke-width="2"/>
+      <text x="20" y="34" class="stage-no" fill="#4B7787">07 / FEATURE RECEIPT</text>
+      <text x="20" y="70" class="stage-title">Static20</text>
+      <text x="20" y="100" class="stage-title">+ Dynamic10</text>
+      <text x="20" y="136" class="body">status · checks · provenance</text>
+    </g>
+
+    <path d="M 1050 602 L 1099 602" fill="none" stroke="#263532" stroke-width="3" marker-end="url(#arrow)"/>
+    <path d="M 1225 450 L 1225 509" fill="none" stroke="#263532" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <g transform="translate(1400 420)">
+      <rect width="120" height="265" rx="18" fill="#F6F4EC" stroke="#B88732" stroke-width="2"/>
+      <text x="60" y="35" text-anchor="middle" class="stage-no">08</text>
+      <text x="60" y="70" text-anchor="middle" class="stage-title">Frozen</text>
+      <text x="60" y="96" text-anchor="middle" class="stage-title">model</text>
+      <line x1="20" y1="120" x2="100" y2="120" stroke="#D3C294"/>
+      <text x="60" y="150" text-anchor="middle" class="small">optional</text>
+      <text x="60" y="180" text-anchor="middle" class="small">range +</text>
+      <text x="60" y="202" text-anchor="middle" class="small">target</text>
+      <text x="60" y="224" text-anchor="middle" class="small">warnings</text>
+      <text x="60" y="252" text-anchor="middle" class="small">experimental</text>
+    </g>
+
+    <line x1="1340" y1="602" x2="1389" y2="602" stroke="#263532" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <rect x="1040" y="745" width="480" height="105" rx="18" fill="#EDF4F1" stroke="#2A7F78" stroke-width="2.5"/>
+    <text x="1068" y="785" class="callout" fill="#256B65">OUTPUT: predicted experimental pKoff</text>
+    <text x="1068" y="817" class="body">assay-derived supervised label · applicability status attached</text>
+    <path d="M 1460 685 L 1460 734" fill="none" stroke="#2A7F78" stroke-width="3" marker-end="url(#arrow-teal)"/>
+
+    <rect x="105" y="770" width="820" height="120" rx="18" fill="#F2F3EF"/>
+    <text x="130" y="807" class="stage-no" fill="#56625F">CLAIM BOUNDARY</text>
+    <text x="130" y="839" class="body">The endpoint is a geometry-defined complete-exit rule, not a physical koff estimate.</text>
+    <text x="130" y="868" class="body">Experimental labels never define the endpoint, P512 frames, or trajectory features.</text>
+
+    <text x="105" y="916" class="small">The three replicas become separate Dynamic10 vectors before corresponding feature values are averaged.</text>
+  </g>
+</svg>

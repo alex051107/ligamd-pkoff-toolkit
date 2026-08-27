@@ -13,6 +13,18 @@ feature vector into a **predicted experimental pKoff**. That target is an
 assay-derived label. It is not a physical dissociation rate calculated from a
 simulation clock, and the bundled models remain `EXPERIMENTAL`.
 
+## Workflow at a glance
+
+![LiGaMD pKoff workflow: a canonical bound structure and three separate replicas pass endpoint-v2 and P512 before Static20 and Dynamic10 features enter an optional frozen experimental-pKoff model](docs/ligamd-pkoff-workflow.svg)
+
+The upper route is label-blind trajectory analysis. Each replica must pass the
+same geometry-and-persistence endpoint, then contributes its own P512-based
+Dynamic10 vector; corresponding feature values are averaged only after that.
+The optional model consumes the resulting feature receipt and predicts an
+assay-derived experimental label with applicability warnings. The red branch
+is the fail-closed result when any replica does not support the required
+episode.
+
 ## Choose the next document by the question you have
 
 The repository separates four kinds of documentation so that an instruction
