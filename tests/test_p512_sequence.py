@@ -9,11 +9,18 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from ligamd_pkoff.resources import bundled_path
 from scripts.koff_ml.p512_sequence import (
     CHANNEL_NAMES,
     P512SequenceError,
+    endpoint_preserving_interior_shuffle_permutation,
     fixed_shuffle_permutation,
     serialize_p512_system,
+)
+from scripts.koff_ml.temporal_order_fixture import (
+    FIXTURE_ID,
+    make_order_positive_fixture,
+    validate_order_positive_fixture,
 )
 
 
@@ -140,6 +147,7 @@ def test_sequence_serializer_preserves_order_and_uses_fixed_row_shuffle(tmp_path
         manifest_path=manifest,
         output_npz=payload_path,
         receipt_json=receipt_path,
+        contract_path=bundled_path("contracts/p512_sequence_v1.json"),
     )
 
     with np.load(payload_path, allow_pickle=False) as payload:
@@ -173,6 +181,59 @@ def test_sequence_serializer_preserves_order_and_uses_fixed_row_shuffle(tmp_path
     assert receipt["labels_or_folds_read"] is False
     assert receipt["model_run_authorized"] is False
     assert json.loads(receipt_path.read_text(encoding="utf-8"))["shape"] == [3, 512, 11]
+
+
+def test_v2_sequence_serializer_preserves_first_and_endpoint_rows(tmp_path: Path) -> None:
+    manifest = _manifest(tmp_path)
+    payload_path = tmp_path / "sequence_v2.npz"
+    receipt_path = tmp_path / "sequence_v2_receipt.json"
+    receipt = serialize_p512_system(
+        manifest_path=manifest,
+        output_npz=payload_path,
+        receipt_json=receipt_path,
+    )
+
+    with np.load(payload_path, allow_pickle=False) as payload:
+        ordered = payload["ordered"]
+        shuffled = payload["shuffled"]
+        permutations = payload["permutation_index0"]
+        for row, replica_id in enumerate(payload["replica_ids"].tolist()):
+            expected = endpoint_preserving_interior_shuffle_permutation(
+                contract_id="P512_ORDERED_512x11_ENDPOINT_PRESERVING_INTERIOR_SHUFFLE_V2",
+                seed=20260816,
+                system_id="SYNTHETIC",
+                replica_id=replica_id,
+                length=512,
+            )
+            assert np.array_equal(permutations[row], expected)
+            assert permutations[row, 0] == 0
+            assert permutations[row, -1] == 511
+            assert np.array_equal(np.sort(permutations[row, 1:-1]), np.arange(1, 511))
+            assert not np.array_equal(permutations[row, 1:-1], np.arange(1, 511))
+            assert np.array_equal(shuffled[row], ordered[row, permutations[row]])
+            assert np.array_equal(shuffled[row, 0], ordered[row, 0])
+            assert np.array_equal(shuffled[row, -1], ordered[row, -1])
+
+    assert receipt["schema_version"] == "ligamd_p512_sequence_receipt_v2.0"
+    assert receipt["payload_schema_version"] == "ligamd_p512_sequence_payload_v2.0"
+    assert receipt["shuffle_mode"] == "ENDPOINT_PRESERVING_INTERIOR_PERMUTATION"
+    assert receipt["shuffle_preserves_boundary_rows"] is True
+    assert receipt["fixed_rank0"] == [0, 511]
+
+
+def test_order_positive_fixture_is_matched_and_boundary_preserving() -> None:
+    fixture = make_order_positive_fixture()
+    result = validate_order_positive_fixture(
+        fixture,
+        contract_id="P512_ORDERED_512x11_ENDPOINT_PRESERVING_INTERIOR_SHUFFLE_V2",
+        seed=20260816,
+    )
+
+    assert result["fixture_id"] == FIXTURE_ID
+    assert result["system_count"] == 32
+    assert result["shape"] == [3, 512, 11]
+    assert result["targets_only_interior_order"] is True
+    assert result["first_and_endpoint_rows_fixed"] is True
 
 
 def test_sequence_serializer_rejects_selection_identity_drift(tmp_path: Path) -> None:

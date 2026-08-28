@@ -39,6 +39,12 @@ The packet separates public evidence, private aggregate statements, proposed
 work, and work that is still blocked. It does not authorize a model run or
 change the bundled experimental registry.
 
+The current data-free matched control for any future ordered-sequence smoke is
+[the P512 sequence v2 decision](docs/p512-sequence-v2-interior-shuffle.md).
+It keeps the first P512 frame and the endpoint frame fixed, then shuffles only
+the 510 interior rows. It changes a representation-engineering control; it
+does not run a sequence model or establish a kinetic result.
+
 ## What happens in one run
 
 ```text
@@ -88,6 +94,7 @@ from ligamd_pkoff.resources import bundled_path
 resources = [
     "contracts/endpoint_v2.json",
     "contracts/p512_sampler_v1.json",
+    "contracts/p512_sequence_v2.json",
     "models/experimental_n31_registry_v1/model_registry.json",
     "models/experimental_n31_registry_v1/models/combined30_p512_ridge.joblib",
 ]

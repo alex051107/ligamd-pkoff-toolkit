@@ -7,6 +7,13 @@ TARGET                = ASSAY_DERIVED_EXPERIMENTAL_PKOFF
 PHYSICAL_KOFF         = NOT_ESTIMATED
 ```
 
+> 2026-08-20 更新：本文件保留原审查提案。未来 temporal smoke 的 H arm 已改用
+> [`p512_sequence_v2.json`](../../../ligamd_pkoff/resources/contracts/p512_sequence_v2.json)：
+> 固定 P512 rank 0 与 511，只置换内部 510 rows。旧版全帧 shuffle 与
+> `BOTH_RESIDUAL_CORRECTION_STANDARD_DEVIATIONS > 1e-12` 不再是当前执行合同；
+> 请以 [`docs/p512-sequence-v2-interior-shuffle.md`](../../p512-sequence-v2-interior-shuffle.md)
+> 和私有的 v2 execution contract 为准。该更新不授权 GRU。
+
 这份计划想解决一个很具体的问题。当前 N31 上，Static20 加 Dynamic10 的
 Ridge 和 Random Forest 点估计略好，但区间跨零；常见 tabular family、两种
 typed representation 和一次固定 output-head LoRA 也已经检查过。继续追加

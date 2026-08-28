@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Added the default P512 sequence v2 contract. It preserves the first and
+  endpoint P512 rows in the shuffled arm and deterministically permutes only
+  the 510 interior rows, so a final-state sequence encoder cannot use
+  endpoint-last placement as an arm-specific shortcut. The historical v1
+  all-row contract remains available only by explicit path for payload replay.
+- Added a data-free, deterministic order-positive fixture and focused tests for
+  boundary preservation, interior-row bijection, row integrity, and v1 replay.
+  These are engineering controls only; no GRU or experimental label was run.
 - Added a data-free, GitHub-only review packet for the proposed model-performance
   plan. The packet records the current aggregate evidence, the bounded two-track
   proposal, its stop rules, and a Chinese prompt for an independent reviewer.

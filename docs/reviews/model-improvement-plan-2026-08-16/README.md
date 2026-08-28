@@ -1,5 +1,13 @@
 # Start here: model-improvement plan review, 16 August 2026
 
+> **20 August 2026 update.** This packet preserves the original review record,
+> but its all-row shuffled temporal null has been superseded for future work.
+> Read [the P512 sequence v2 decision](../../p512-sequence-v2-interior-shuffle.md)
+> before judging a temporal smoke. v2 holds the first and endpoint rows fixed,
+> shuffles only the interior 510 rows, and still does not authorize a model run.
+> The operational-status table below is an August 16 snapshot, not a claim that
+> later label-blind materialization or this v2 contract has not occurred.
+
 This directory is a review packet, not a new model release. It gives a reviewer
 enough context to judge whether the proposed next experiments are useful,
 scientifically bounded, and proportionate to the current data. No raw
@@ -136,7 +144,9 @@ python -m scripts.koff_ml.p512_sequence \
 
 Start from
 [`p512-sequence-input-manifest.example.json`](p512-sequence-input-manifest.example.json).
-The output contains ordered and fixed-shuffle controls with identical rows and
-an audit receipt. It does not contain a label, fold, scaler, prediction, or
-model. A successful serialization therefore does not authorize the proposed
-GRU experiment.
+The output contains ordered and matched-shuffle controls with identical rows and
+an audit receipt. The current v2 default fixes the first and endpoint rows and
+permutes only the interior 510 rows; pass the v1 contract explicitly only to
+replay a historical all-row payload. The output does not contain a label, fold,
+scaler, prediction, or model. A successful serialization therefore does not
+authorize the proposed GRU experiment.

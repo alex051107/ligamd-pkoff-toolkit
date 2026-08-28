@@ -31,10 +31,13 @@ REQUIRED = (
     "ligamd_pkoff/resources/__init__.py",
     "ligamd_pkoff/resources/contracts/endpoint_v2.json",
     "ligamd_pkoff/resources/contracts/p512_sampler_v1.json",
+    "ligamd_pkoff/resources/contracts/p512_sequence_v2.json",
     "ligamd_pkoff/resources/contracts/frozen_n31_registry_input_provenance_v1.json",
     "scripts/koff_ml/toolkit.py",
     "scripts/koff_ml/endpoint_two_metric.py",
     "scripts/koff_ml/p512_sampler.py",
+    "scripts/koff_ml/p512_sequence.py",
+    "scripts/koff_ml/temporal_order_fixture.py",
     "scripts/koff_ml/serialization_compat.py",
     "ligamd_pkoff/resources/models/experimental_n31_registry_v1/model_registry.json",
     "ligamd_pkoff/resources/models/experimental_n31_registry_v1/model_scoreboard.tsv",
@@ -46,6 +49,7 @@ REQUIRED = (
     "docs/method-evidence.md",
     "docs/tutorial-synthetic-campaign.md",
     "tests/test_p512_sampler.py",
+    "tests/test_p512_sequence.py",
 )
 FORBIDDEN_PUBLIC_FILES = (
     "scripts/koff_ml/label_blind_sampler_sidecar.py",
@@ -103,12 +107,24 @@ def main() -> int:
     resource_root = ROOT / "ligamd_pkoff/resources"
     endpoint = json.loads((resource_root / "contracts/endpoint_v2.json").read_text())
     p512 = json.loads((resource_root / "contracts/p512_sampler_v1.json").read_text())
+    sequence_v2 = json.loads((resource_root / "contracts/p512_sequence_v2.json").read_text())
     registry_root = resource_root / "models/experimental_n31_registry_v1"
     registry = json.loads((registry_root / "model_registry.json").read_text())
     if endpoint.get("schema_version") != "ligamd_endpoint_contract_v2.0":
         _fail("endpoint contract schema mismatch")
     if p512.get("schema_version") != "ligamd_p512_sampler_contract_v1.0":
         _fail("P512 contract schema mismatch")
+    if sequence_v2.get("schema_version") != "ligamd_p512_sequence_contract_v2.0":
+        _fail("P512 sequence v2 contract schema mismatch")
+    if sequence_v2.get("model_run_authorized") is not False:
+        _fail("P512 sequence v2 must not authorize a model run")
+    shuffled = sequence_v2.get("shuffled_control", {})
+    if (
+        shuffled.get("mode") != "ENDPOINT_PRESERVING_INTERIOR_PERMUTATION"
+        or shuffled.get("fixed_rank0") != [0, 511]
+        or shuffled.get("interior_rank0_range") != [1, 510]
+    ):
+        _fail("P512 sequence v2 shuffled-control boundary contract mismatch")
     if registry.get("scientific_status") != "EXPERIMENTAL":
         _fail("bundled registry must remain EXPERIMENTAL")
     for profile_id, profile in registry.get("profiles", {}).items():

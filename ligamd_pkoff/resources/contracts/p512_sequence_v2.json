@@ -1,0 +1,186 @@
+{
+  "schema_version": "ligamd_p512_sequence_contract_v2.0",
+  "contract_id": "P512_ORDERED_512x11_ENDPOINT_PRESERVING_INTERIOR_SHUFFLE_V2",
+  "supersedes_contract_id": "P512_ORDERED_512x11_LABEL_BLIND_V1",
+  "status": "FROZEN_LABEL_BLIND_SERIALIZER_V2_MODEL_RUN_NOT_AUTHORIZED",
+  "implementation_module": "scripts.koff_ml.p512_sequence",
+  "model_run_authorized": false,
+  "purpose": "Serialize already-selected P512 real frames without re-running the endpoint, sampler, or any supervised operation. The v2 shuffled control keeps the first and endpoint P512 rows fixed and permutes only the 510 interior rows.",
+  "shape": {
+    "statistical_unit": "system",
+    "replicas_per_system": 3,
+    "frames_per_replica": 512,
+    "channels_per_frame": 11,
+    "system_tensor_order": ["replica", "p512_rank", "channel"],
+    "replica_axis_order": "lexicographic replica_id"
+  },
+  "channels": [
+    {
+      "index0": 0,
+      "name": "pocket_geometric_com_distance_A",
+      "unit": "angstrom",
+      "source": "dense reference_features.csv column written by scripts/koff_ml/reference_features.py",
+      "meaning": "Geometric center distance between ligand heavy atoms and the frozen pocket heavy atoms under the public PBC treatment.",
+      "direction": "Larger values indicate greater geometric separation from the pocket.",
+      "missing_rule": "reject route"
+    },
+    {
+      "index0": 1,
+      "name": "native_contact_fraction",
+      "unit": "fraction_0_to_1",
+      "source": "dense reference_features.csv column; frozen frame-1 native pocket contacts at the public 4.5-A cutoff",
+      "meaning": "Fraction of the frozen native pocket-contact residues that remain in contact in the current dense saved frame.",
+      "direction": "Larger values indicate greater retention of the initial contact network.",
+      "missing_rule": "reject route"
+    },
+    {
+      "index0": 2,
+      "name": "contact_formation_fraction",
+      "unit": "fraction_0_to_1",
+      "source": "dense contact_formations divided by the number of frozen pocket contact-bit columns",
+      "meaning": "Fraction of frozen pocket residue contact bits changing from absent to present relative to the immediately preceding dense saved frame; frame 1 is zero. It is not recomputed between nonconsecutive P512 frames.",
+      "direction": "Larger values indicate more local contact formation at that dense-frame transition.",
+      "missing_rule": "reject route"
+    },
+    {
+      "index0": 3,
+      "name": "contact_break_fraction",
+      "unit": "fraction_0_to_1",
+      "source": "dense contact_breaks divided by the number of frozen pocket contact-bit columns",
+      "meaning": "Fraction of frozen pocket residue contact bits changing from present to absent relative to the immediately preceding dense saved frame; frame 1 is zero. It is not recomputed between nonconsecutive P512 frames.",
+      "direction": "Larger values indicate more local contact loss at that dense-frame transition.",
+      "missing_rule": "reject route"
+    },
+    {
+      "index0": 4,
+      "name": "pose__aligned_ligand_rmsd_A",
+      "unit": "angstrom",
+      "source": "dense reference_features.csv column after frozen-pocket Kabsch alignment",
+      "meaning": "Ligand heavy-atom pose RMSD relative to the bound reference after aligning the frozen pocket.",
+      "direction": "Larger values indicate greater pose displacement or conformational change after pocket alignment.",
+      "missing_rule": "reject route"
+    },
+    {
+      "index0": 5,
+      "name": "pose__aligned_centroid_displacement_A",
+      "unit": "angstrom",
+      "source": "dense reference_features.csv column after frozen-pocket Kabsch alignment",
+      "meaning": "Ligand heavy-atom centroid displacement from the bound reference after aligning the frozen pocket.",
+      "direction": "Larger values indicate greater displacement from the bound pose.",
+      "missing_rule": "reject route"
+    },
+    {
+      "index0": 6,
+      "name": "pose__ligand_internal_conformation_rmsd_A",
+      "unit": "angstrom",
+      "source": "dense reference_features.csv column from ligand-centered heavy-atom coordinates",
+      "meaning": "Ligand internal-conformation RMSD relative to the bound reference, separated from rigid translation.",
+      "direction": "Larger values indicate greater internal conformational change.",
+      "missing_rule": "reject route"
+    },
+    {
+      "index0": 7,
+      "name": "pose__pocket_alignment_rmsd_A",
+      "unit": "angstrom",
+      "source": "dense reference_features.csv column from the frozen-pocket alignment",
+      "meaning": "RMSD of the frozen pocket heavy atoms after alignment to the bound reference.",
+      "direction": "Larger values indicate greater pocket deformation or a less reference-like alignment geometry.",
+      "missing_rule": "reject route"
+    },
+    {
+      "index0": 8,
+      "name": "global__protein_min_heavy_distance_A",
+      "unit": "angstrom",
+      "source": "dense reference_features.csv column using the minimum ligand-to-whole-protein heavy-atom distance",
+      "meaning": "Minimum heavy-atom distance between the ligand and any standard-protein residue in the current frame.",
+      "direction": "Larger values indicate greater whole-protein clearance.",
+      "missing_rule": "reject route"
+    },
+    {
+      "index0": 9,
+      "name": "global__protein_contact_residue_count",
+      "unit": "residue_count",
+      "source": "dense reference_features.csv column using the public 4.5-A ligand-heavy-atom contact cutoff",
+      "meaning": "Number of standard-protein residues contacting the ligand in the current frame.",
+      "direction": "Larger values indicate contact with more protein residues.",
+      "missing_rule": "reject route"
+    },
+    {
+      "index0": 10,
+      "name": "pocket_contact_fraction",
+      "unit": "fraction_0_to_1",
+      "source": "mean of the frozen pocket contact-bit columns in the current dense saved frame",
+      "meaning": "Fraction of all frozen pocket residues that contact the ligand at the public 4.5-A cutoff.",
+      "direction": "Larger values indicate broader current contact with the frozen pocket.",
+      "missing_rule": "reject route"
+    }
+  ],
+  "input_authority": {
+    "endpoint": "existing endpoint-v2/simple-two-metric PASS authority",
+    "sampler": "existing P512_MULTIBLOCK_PATH_ARCLENGTH_512_REAL_FRAMES identities",
+    "selection_columns": ["system_id", "replica_id", "source_index0", "source_frame"],
+    "selection_table_compatibility": "A 512-row P512-only table is accepted directly. If a method column is present, the serializer selects exactly method=P512 before applying the 512-row contract; selection_rank0, when present, must be exactly 0..511.",
+    "selection_requirements": [
+      "exactly 512 rows per route after the frozen P512 filter",
+      "source_index0 is unique and strictly increasing",
+      "source_frame equals source_index0 plus one",
+      "first and endpoint P512 frames are retained",
+      "no confirmation-tail or post-exit frame is added"
+    ]
+  },
+  "missing_value_policy": "No imputation. Any missing or non-finite channel, missing route, wrong shape, or identity mismatch rejects the route and therefore the three-replica system payload.",
+  "label_blind_forbidden_inputs": [
+    "experimental pKoff or koff",
+    "exact-ligand fold assignment",
+    "model prediction or residual",
+    "OOF loss",
+    "result-dependent frame or route selection"
+  ],
+  "audit_metadata": [
+    "system_id",
+    "replica_id",
+    "source_index0[512]",
+    "source_frame[512]",
+    "normalized_progress_to_endpoint[512] when already available",
+    "endpoint authority identifier",
+    "P512 sampler authority identifier",
+    "dense-trace and selected-identity receipt identifiers",
+    "saved-frame cadence when authoritative",
+    "trajectory protocol compatibility status supplied by the candidate ledger"
+  ],
+  "predictive_input_exclusions": [
+    "source_index0",
+    "source_frame",
+    "normalized progress",
+    "absolute episode duration",
+    "saved-frame cadence",
+    "LiGaMD sigma or boost parameters",
+    "replica identifier"
+  ],
+  "shuffled_control": {
+    "mode": "ENDPOINT_PRESERVING_INTERIOR_PERMUTATION",
+    "seed": 20260816,
+    "permutation_scope": "one fixed interior permutation per system and replica",
+    "fixed_rank0": [0, 511],
+    "interior_rank0_range": [1, 510],
+    "require_nonidentity_interior_permutation": true,
+    "row_integrity": "all 11 channels move together",
+    "algorithm": "Keep H[0] = O[0] and H[511] = O[511]. For each interior P512 rank i in 1..510, compute SHA256 over UTF-8 contract_id, NUL, seed, NUL, system_id, NUL, replica_id, NUL, i. Sort interior ranks by the 32 digest bytes and then by i. The resulting permutation_index0 is [0] plus the sorted interior ranks plus [511]; H[position] = O[permutation_index0[position]].",
+    "permutation_sha256_encoding": "SHA256 over the complete 512-entry permutation_index0 encoded as little-endian signed-int64 values in C order",
+    "manifest_fields": ["system_id", "replica_id", "seed", "permutation_index0[512]", "permutation_sha256"],
+    "labels_or_folds_read": false
+  },
+  "fold_local_modeling_rule": {
+    "serializer_scales_values": false,
+    "training_scaler": "Within each outer exact-ligand LOGO fold, fit one per-channel mean and standard deviation using ordered sequences from outer-training systems only. Use scale 1.0 for a training standard deviation at or below 1e-12.",
+    "matched_arms": "Apply that same outer-training scaler to ordered, shuffled, and outer-test sequences. Do not select channels or fit a second scaler for H.",
+    "outer_test_excluded": true
+  },
+  "scientific_boundaries": {
+    "p512_is_uniform_physical_time": false,
+    "replicas_are_independent_supervised_samples": false,
+    "physical_koff_estimated": false,
+    "representation_selected": false,
+    "comment": "A future ordered-versus-shuffled result can address information tied to P512 interior path order while holding first and endpoint rows fixed. It cannot establish unbiased time kinetics."
+  }
+}

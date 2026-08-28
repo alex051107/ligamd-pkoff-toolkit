@@ -11,17 +11,20 @@
 
 请按下面顺序阅读：
 1. docs/reviews/critical-handoff-2026-08-28/README.md
-2. docs/reviews/model-improvement-plan-2026-08-16/README.md
-3. docs/reviews/model-improvement-plan-2026-08-16/current-evidence.md
-4. docs/p512-sequence-v2-interior-shuffle.md
-5. docs/endpoint-and-sampler.md
-6. docs/method-evidence.md
-7. docs/model-development-roadmap.md
-8. MODEL_CARD.md
-9. README.md
-10. ligamd_pkoff/resources/models/experimental_n31_registry_v1/model_scoreboard.tsv
-11. ligamd_pkoff/resources/models/experimental_n31_registry_v1/paired_dynamic_increment.tsv
-12. ligamd_pkoff/resources/contracts/p512_sequence_v2.json
+2. docs/reviews/critical-handoff-2026-08-28/n34-aggregate-evidence-v1.tsv
+3. docs/reviews/critical-handoff-2026-08-28/admission-audit-aggregate-v1.tsv
+4. docs/reviews/critical-handoff-2026-08-28/1eby-cohort-receipt-v1.md
+5. docs/reviews/model-improvement-plan-2026-08-16/README.md
+6. docs/reviews/model-improvement-plan-2026-08-16/current-evidence.md
+7. docs/p512-sequence-v2-interior-shuffle.md
+8. docs/endpoint-and-sampler.md
+9. docs/method-evidence.md
+10. docs/model-development-roadmap.md
+11. MODEL_CARD.md
+12. README.md
+13. ligamd_pkoff/resources/models/experimental_n31_registry_v1/model_scoreboard.tsv
+14. ligamd_pkoff/resources/models/experimental_n31_registry_v1/paired_dynamic_increment.tsv
+15. ligamd_pkoff/resources/contracts/p512_sequence_v2.json
 
 项目目前报告的私有聚合状态如下。你可以审查其逻辑和所需证据，但不能假装已独立重算：
 - 34 个历史 development-exposed systems，30 个 exact-ligand groups。
@@ -29,7 +32,7 @@
 - 定义 delta = Combined30 MAE - Static20 MAE，得到 -0.0400 pKoff；5,000 次 paired group bootstrap interval 为 [-0.1196, +0.0146]；14/30 groups 的误差下降。
 - 因区间包含 0，项目没有把 Combined30 说成稳定改进、最终模型或外部验证。
 - 37 个历史完成系统经过无标签检查，35 个具有 Current30 特征链；其中两个没有凑齐三条 complete-exit passes，另一个因重复模拟资产和 assay-ligand mismatch 不进入独立 supervised row。
-- 新 1EBY 的初始、冻结 18-replica cohort 有一条 complete-exit pass，不能通过 exact-three gate，因而没有进入特征、预测或 MAE。另有六条在这批 endpoint 结果之前已提交的同条件 production，单独作为 prospective cohort；它们尚未进入特征或模型。
+- 新 1EBY 的初始、冻结 18-replica cohort 有一条 complete-exit pass，不能通过 exact-three gate，因而没有进入特征、预测或 MAE。另有六条同条件 production 的提交时间早于该 18 条 cohort 的 first endpoint selection readout；它们是同一系统的单独 cohort，不是新的 ligand group，且尚未进入特征或模型。请以 cohort receipt 审查时间边界是否足够。
 
 请逐项审查以下论断。每项严格使用 VERIFIED、WRONG、DATA_INSUFFICIENT 或 NOT_EVALUABLE_FROM_PUBLIC_REPO 之一开头，并给出简短理由及 GitHub path/line range 或外部一手来源。不要输出隐藏思维过程。
 
@@ -38,7 +41,7 @@ C2. paired group bootstrap interval 跨过 0 时，不能用 -0.0400 的点估�
 C3. Dynamic10 没有稳定增量，不能推出原始 trajectory 完全无信息；它只否定当前十个摘要在当前开发比较中已被证明有稳定增益。
 C4. exact-ligand leave-one-group-out 与 fold-local feature preprocessing 处理了部分标签泄漏风险，但未自动消除 protein family、assay、construct、chemical-state 或 production-protocol shift。
 C5. 以三条 endpoint-passing replicas 才构建一个系统行，可能引入选择效应；当前工作把 endpoint 设为 label-blind contract 是否足以处理这个问题。
-C6. 把 1EBY 的新增六条与已完成的初始 18 条分成两个 cohort，是否足以避免事后补跑救结果。若不足，请给出最小、可预注册的修订，而不是建议无限增加 replicas。
+C6. 1EBY cohort receipt 所记录的时间顺序和禁止混池规则，是否足以排除“看见首批 endpoint 结果后才启动六条”的特定 rescue 风险。它不能把第二 cohort 变成新的 ligand group。若证据仍不足，请给出最小修订，而不是建议无限增加 replicas。
 C7. P512 的内部顺序测试应固定首帧和 endpoint、只乱序 510 个内部帧。若 ordered 与 matched shuffled 有差异，它能说明什么；若没有差异，又不能说明什么。
 C8. Static20 是回答“轨迹摘要是否在起始结构和化学描述符之外增加预测信息”的必要对照，不是为了人为抬高 Combined30 的门槛。
 C9. 当前最可能导致结论错误的环节是数据量、表征压缩、标签/模拟不匹配、endpoint selection，还是其他因素。请不要只给一个猜测；按现有证据能否区分来判断。

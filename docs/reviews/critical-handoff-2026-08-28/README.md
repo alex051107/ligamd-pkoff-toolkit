@@ -9,9 +9,10 @@ methodological judgment.
 No raw trajectory, topology, private label table, ligand-identity crosswalk,
 per-system prediction, local path, or cluster credential is included here.
 The aggregate results below are supplied for methodological review. A reviewer
-with GitHub access can inspect the public code and contracts, but cannot
-reproduce private cohort membership or the aggregate N34 calculation from this
-repository alone.
+with GitHub access can inspect the public code, contracts, an aggregate N34
+evidence table, a de-identified admission audit, and a timestamped 1EBY cohort
+receipt. It still cannot reproduce private cohort membership or the aggregate
+N34 calculation from this repository alone.
 
 ## Bottom line
 
@@ -27,6 +28,11 @@ was -0.0400 pKoff. A 5,000-resample paired group bootstrap interval was
 favourable to Combined30; the interval still permits no average improvement.
 This is development-exposed cohort-composition sensitivity, not prospective
 validation or model selection.
+
+The machine-readable aggregate values and the frozen-run settings are in
+[N34 aggregate evidence](n34-aggregate-evidence-v1.tsv). That table is a
+public summary of a private execution receipt. It supplies no label,
+per-system prediction, or identity mapping.
 
 The open question is therefore precise. Is the present limitation chiefly a
 small and heterogeneous supervised cohort, a loss of useful trajectory signal
@@ -76,7 +82,8 @@ This result should not be simplified to “only 34 systems exist.” A larger
 known roster contains systems at earlier stages, systems with production files
 but no closed assay or identity match, and systems awaiting current production
 output. The census distinguishes those states instead of silently dropping
-them.
+them. [The public admission audit](admission-audit-aggregate-v1.tsv) publishes
+these stage counts without publishing the row-level records.
 
 The reusable processing sequence is:
 
@@ -127,12 +134,16 @@ prediction row, or an MAE comparison. No threshold, sampler, seed, or model
 was changed to obtain another pass.
 
 Six additional 1EBY productions were submitted before that initial endpoint
-result and are treated as a separate prospective same-condition cohort. At the
-time of this handoff they had not entered the feature or model path. If they
-finish, they must pass the existing endpoint gate and exact-three selector as
-their own cohort before any materialisation. They must not reopen the completed
-18-replica result or be pooled with it post hoc. A reviewer should explicitly
-judge whether this separation is sufficient to avoid a rescue analysis.
+result. [The cohort receipt](1eby-cohort-receipt-v1.md) gives the scheduler
+identifiers, submission times, first-read time, and the fixed no-mixing rule.
+It records a separate same-condition production cohort, not a new independent
+ligand group and not a retroactive proof of prospective design. At the
+receipt's last scheduler readback those routes had not entered the feature or
+model path. If they finish, they must pass the existing endpoint gate and
+exact-three selector as their own cohort before any materialisation. They must
+not reopen the completed 18-replica result or be pooled with it post hoc. A
+reviewer should explicitly judge whether the recorded time order is sufficient
+to rule out a rescue analysis.
 
 ## What remains unresolved
 
@@ -179,10 +190,13 @@ asking:
 ## Reading order for an independent review
 
 1. Read this handoff.
-2. Read the earlier [model-plan review packet](../model-improvement-plan-2026-08-16/README.md), including its evidence ledger and its data boundary.
-3. Read the current [P512 interior-shuffle decision](../../p512-sequence-v2-interior-shuffle.md).
-4. Inspect [the endpoint and sampler explanation](../../endpoint-and-sampler.md), [the method-evidence ledger](../../method-evidence.md), [the model-development roadmap](../../model-development-roadmap.md), the [model card](../../../MODEL_CARD.md), and the [public score tables](../../../ligamd_pkoff/resources/models/experimental_n31_registry_v1/).
-5. Use the paste-ready [Chinese review prompt](chatgpt-pro-critical-review-prompt-zh.md).
+2. Inspect the [N34 aggregate evidence](n34-aggregate-evidence-v1.tsv),
+   [admission audit](admission-audit-aggregate-v1.tsv), and [1EBY cohort
+   receipt](1eby-cohort-receipt-v1.md).
+3. Read the earlier [model-plan review packet](../model-improvement-plan-2026-08-16/README.md), including its evidence ledger and its data boundary.
+4. Read the current [P512 interior-shuffle decision](../../p512-sequence-v2-interior-shuffle.md).
+5. Inspect [the endpoint and sampler explanation](../../endpoint-and-sampler.md), [the method-evidence ledger](../../method-evidence.md), [the model-development roadmap](../../model-development-roadmap.md), the [model card](../../../MODEL_CARD.md), and the [public score tables](../../../ligamd_pkoff/resources/models/experimental_n31_registry_v1/).
+6. Use the paste-ready [Chinese review prompt](chatgpt-pro-critical-review-prompt-zh.md).
 
 The public code can be reviewed directly. Any claim that requires private
 records should be labelled `NOT_EVALUABLE_FROM_PUBLIC_REPO`, followed by the

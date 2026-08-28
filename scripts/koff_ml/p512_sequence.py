@@ -34,12 +34,25 @@ from scripts.koff_ml.p512_sampler import (
 )
 
 
-DEFAULT_SEQUENCE_CONTRACT = bundled_path("contracts/p512_sequence_v1.json")
+DEFAULT_SEQUENCE_CONTRACT = bundled_path("contracts/p512_sequence_v2.json")
 
 MANIFEST_SCHEMA = "ligamd_p512_sequence_input_manifest_v1.0"
-OUTPUT_SCHEMA = "ligamd_p512_sequence_payload_v1.0"
-RECEIPT_SCHEMA = "ligamd_p512_sequence_receipt_v1.0"
 PROTOCOL_STATUSES = {"PASS", "SHIFT", "UNKNOWN"}
+
+_SEQUENCE_CONTRACTS: dict[str, dict[str, str]] = {
+    "P512_ORDERED_512x11_LABEL_BLIND_V1": {
+        "schema_version": "ligamd_p512_sequence_contract_v1.0",
+        "shuffle_mode": "ALL_ROWS",
+        "payload_schema_version": "ligamd_p512_sequence_payload_v1.0",
+        "receipt_schema_version": "ligamd_p512_sequence_receipt_v1.0",
+    },
+    "P512_ORDERED_512x11_ENDPOINT_PRESERVING_INTERIOR_SHUFFLE_V2": {
+        "schema_version": "ligamd_p512_sequence_contract_v2.0",
+        "shuffle_mode": "ENDPOINT_PRESERVING_INTERIOR_PERMUTATION",
+        "payload_schema_version": "ligamd_p512_sequence_payload_v2.0",
+        "receipt_schema_version": "ligamd_p512_sequence_receipt_v2.0",
+    },
+}
 
 MANIFEST_FIELDS = {
     "schema_version",
@@ -90,8 +103,10 @@ def load_sequence_contract(path: Path = DEFAULT_SEQUENCE_CONTRACT) -> dict[str, 
         contract = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise P512SequenceError(f"cannot read sequence contract: {path}") from exc
-    _require(contract.get("schema_version") == "ligamd_p512_sequence_contract_v1.0", "unexpected sequence contract schema")
-    _require(contract.get("contract_id") == "P512_ORDERED_512x11_LABEL_BLIND_V1", "unexpected sequence contract id")
+    contract_id = str(contract.get("contract_id", "")).strip()
+    metadata = _SEQUENCE_CONTRACTS.get(contract_id)
+    _require(metadata is not None, "unexpected sequence contract id")
+    _require(contract.get("schema_version") == metadata["schema_version"], "unexpected sequence contract schema")
     shape = contract.get("shape", {})
     _require(
         (shape.get("replicas_per_system"), shape.get("frames_per_replica"), shape.get("channels_per_frame"))
@@ -104,7 +119,25 @@ def load_sequence_contract(path: Path = DEFAULT_SEQUENCE_CONTRACT) -> dict[str, 
     shuffled = contract.get("shuffled_control", {})
     _require(shuffled.get("seed") == 20260816, "unexpected shuffled-control seed")
     _require(shuffled.get("labels_or_folds_read") is False, "shuffle contract is not label-blind")
+    shuffle_mode = str(shuffled.get("mode", "ALL_ROWS")).strip().upper()
+    _require(shuffle_mode == metadata["shuffle_mode"], "unexpected shuffled-control mode")
+    if shuffle_mode == "ENDPOINT_PRESERVING_INTERIOR_PERMUTATION":
+        _require(shuffled.get("fixed_rank0") == [0, 511], "v2 shuffle must fix P512 ranks 0 and 511")
+        _require(shuffled.get("interior_rank0_range") == [1, 510], "v2 shuffle interior ranks must be 1..510")
+        _require(
+            shuffled.get("require_nonidentity_interior_permutation") is True,
+            "v2 shuffle must require a nonidentity interior permutation",
+        )
     return contract
+
+
+def _sequence_contract_metadata(contract: dict[str, Any]) -> dict[str, str]:
+    """Return validated serialization metadata for a loaded sequence contract."""
+
+    contract_id = str(contract.get("contract_id", "")).strip()
+    metadata = _SEQUENCE_CONTRACTS.get(contract_id)
+    _require(metadata is not None, "unexpected sequence contract id")
+    return metadata
 
 
 def _read_manifest(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
@@ -240,16 +273,57 @@ def _route_matrix(trace: P512Trace, indices: np.ndarray, *, replica_id: str) -> 
     return selected
 
 
-def fixed_shuffle_permutation(
-    *, contract_id: str, seed: int, system_id: str, replica_id: str, length: int
+def _ranked_permutation(
+    *, contract_id: str, seed: int, system_id: str, replica_id: str, ranks: range
 ) -> np.ndarray:
-    """Return the contract's deterministic, label-free row permutation."""
+    """Return one deterministic, label-free ordering of the supplied ranks."""
 
     keyed: list[tuple[bytes, int]] = []
-    for rank in range(length):
+    for rank in ranks:
         payload = "\0".join((contract_id, str(seed), system_id, replica_id, str(rank))).encode("utf-8")
         keyed.append((hashlib.sha256(payload).digest(), rank))
     return np.asarray([rank for _, rank in sorted(keyed, key=lambda item: (item[0], item[1]))], dtype=np.int64)
+
+
+def fixed_shuffle_permutation(
+    *, contract_id: str, seed: int, system_id: str, replica_id: str, length: int
+) -> np.ndarray:
+    """Return the v1 deterministic permutation over every sequence row."""
+
+    _require(length > 0, "fixed shuffle length must be positive")
+    return _ranked_permutation(
+        contract_id=contract_id,
+        seed=seed,
+        system_id=system_id,
+        replica_id=replica_id,
+        ranks=range(length),
+    )
+
+
+def endpoint_preserving_interior_shuffle_permutation(
+    *, contract_id: str, seed: int, system_id: str, replica_id: str, length: int
+) -> np.ndarray:
+    """Return a v2 permutation that fixes first and endpoint rows.
+
+    The input row multiset is unchanged. Rank 0 and rank ``length - 1`` stay
+    at their original positions; only the interior rows are deterministically
+    reordered. This prevents a final-state sequence encoder from comparing an
+    endpoint-last ordered arm against an arbitrary-last shuffled arm.
+    """
+
+    _require(length >= 3, "endpoint-preserving interior shuffle requires at least three rows")
+    interior = _ranked_permutation(
+        contract_id=contract_id,
+        seed=seed,
+        system_id=system_id,
+        replica_id=replica_id,
+        ranks=range(1, length - 1),
+    )
+    _require(
+        not np.array_equal(interior, np.arange(1, length - 1, dtype=np.int64)),
+        "endpoint-preserving interior shuffle unexpectedly left every interior row in order",
+    )
+    return np.concatenate((np.asarray([0], dtype=np.int64), interior, np.asarray([length - 1], dtype=np.int64)))
 
 
 def _permutation_sha256(permutation: np.ndarray) -> str:
@@ -295,6 +369,8 @@ def serialize_p512_system(
     route_receipts: list[dict[str, Any]] = []
     seed = int(contract["shuffled_control"]["seed"])
     contract_id = str(contract["contract_id"])
+    contract_metadata = _sequence_contract_metadata(contract)
+    shuffle_mode = contract_metadata["shuffle_mode"]
     for route in routes:
         replica_id = route["replica_id"]
         indices, frames = _read_selection(
@@ -308,21 +384,35 @@ def serialize_p512_system(
         except P512SamplerError as exc:
             raise P512SequenceError(f"{replica_id}: dense trace failed: {exc}") from exc
         ordered = _route_matrix(trace, indices, replica_id=replica_id)
-        permutation = fixed_shuffle_permutation(
-            contract_id=contract_id,
-            seed=seed,
-            system_id=manifest["system_id"],
-            replica_id=replica_id,
-            length=512,
-        )
+        if shuffle_mode == "ALL_ROWS":
+            permutation = fixed_shuffle_permutation(
+                contract_id=contract_id,
+                seed=seed,
+                system_id=manifest["system_id"],
+                replica_id=replica_id,
+                length=512,
+            )
+        else:
+            permutation = endpoint_preserving_interior_shuffle_permutation(
+                contract_id=contract_id,
+                seed=seed,
+                system_id=manifest["system_id"],
+                replica_id=replica_id,
+                length=512,
+            )
         _require(len(np.unique(permutation)) == 512, f"{replica_id}: shuffle permutation is not bijective")
+        if shuffle_mode == "ENDPOINT_PRESERVING_INTERIOR_PERMUTATION":
+            _require(
+                permutation[0] == 0 and permutation[-1] == 511,
+                f"{replica_id}: v2 shuffle did not preserve first and endpoint ranks",
+            )
         shuffled = ordered[permutation]
         ordered_rows.append(ordered)
         shuffled_rows.append(shuffled)
         indices_rows.append(indices)
         frames_rows.append(frames)
         permutation_rows.append(permutation)
-        route_receipts.append({
+        route_receipt = {
             "replica_id": replica_id,
             "dense_trace": str(route["dense_trace"]),
             "selected_frames": str(route["selected_frames"]),
@@ -333,7 +423,11 @@ def serialize_p512_system(
             "selected_identity_receipt_id": route.get("selected_identity_receipt_id"),
             "saved_frame_interval_ps": route.get("saved_frame_interval_ps"),
             "permutation_sha256": _permutation_sha256(permutation),
-        })
+        }
+        if shuffle_mode == "ENDPOINT_PRESERVING_INTERIOR_PERMUTATION":
+            route_receipt["fixed_rank0"] = [0, 511]
+            route_receipt["interior_rank0_range"] = [1, 510]
+        route_receipts.append(route_receipt)
 
     ordered_tensor = np.stack(ordered_rows).astype(np.float32, copy=False)
     shuffled_tensor = np.stack(shuffled_rows).astype(np.float32, copy=False)
@@ -349,8 +443,8 @@ def serialize_p512_system(
         replica_ids=np.asarray([route["replica_id"] for route in routes], dtype="U64"),
     )
     receipt = {
-        "schema_version": RECEIPT_SCHEMA,
-        "payload_schema_version": OUTPUT_SCHEMA,
+        "schema_version": contract_metadata["receipt_schema_version"],
+        "payload_schema_version": contract_metadata["payload_schema_version"],
         "status": "PASS_LABEL_BLIND_P512_SEQUENCE_READY_MODEL_RUN_NOT_AUTHORIZED",
         "contract_id": contract_id,
         "system_id": manifest["system_id"],
@@ -372,6 +466,15 @@ def serialize_p512_system(
         "physical_koff_estimated": False,
         "claim_ceiling": "Label-blind P512 representation engineering only; no model, generalization, or physical-rate conclusion.",
     }
+    if shuffle_mode == "ENDPOINT_PRESERVING_INTERIOR_PERMUTATION":
+        receipt.update(
+            {
+                "shuffle_mode": shuffle_mode,
+                "shuffle_preserves_boundary_rows": True,
+                "fixed_rank0": [0, 511],
+                "interior_rank0_range": [1, 510],
+            }
+        )
     write_json(receipt_json, receipt)
     return receipt
 
